@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 import argparse
+import datetime
+import pytz
 import logging
 import os
 import re
@@ -51,17 +53,31 @@ def get_kube_api():
     return api
 
 
-def autoscale(exclude_namespaces: set, dry_run: bool=False):
+def autoscale(exclude_namespaces: set, exclude_deployments: set, dry_run: bool=False):
     api = get_kube_api()
+
+    # TODO: make configurable
+    tz = pytz.timezone('Europe/Berlin')
+    now = datetime.datetime.now(tz)
+
+    is_workday = 0 <= now.weekday() <= 4
+    is_worktime = is_workday and (7 <= now.hour < 21)
+    print(now, is_workday, is_worktime)
 
     deployments = pykube.Deployment.objects(api, namespace=pykube.all)
     for deploy in deployments:
 
-        if deploy.namespace not in exclude_namespaces:
+        if deploy.name not in exclude_deployments and deploy.namespace not in exclude_namespaces:
             print(deploy.name)
             replicas = deploy.obj['spec']['replicas']
-            print(replicas)
-            if replicas > 0:
+            original_replicas = deploy.annotations.get('downscaler/original-replicas')
+            print(replicas, original_replicas)
+            if is_worktime and replicas == 0 and original_replicas:
+                # scale up
+                deploy.obj['spec']['replicas'] = int(original_replicas)
+                deploy.update()
+            elif not is_worktime and replicas > 0:
+                # scale down
                 deploy.annotations['downscaler/original-replicas'] = str(replicas)
                 deploy.obj['spec']['replicas'] = 0
                 deploy.update()
@@ -75,6 +91,7 @@ def main():
     parser.add_argument('--once', help='Run loop only once and exit', action='store_true')
     parser.add_argument('--interval', type=int, help='Loop interval (default: 60s)', default=60)
     parser.add_argument('--exclude-namespaces', nargs='*', help='', default=['kube-system'])
+    parser.add_argument('--exclude-deployments', nargs='*', help='', default=['downscaler'])
     args = parser.parse_args()
 
     logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s', level=logging.DEBUG if args.debug else logging.INFO)
@@ -84,7 +101,7 @@ def main():
 
     while True:
         try:
-            autoscale(args.exclude_namespaces, dry_run=args.dry_run)
+            autoscale(args.exclude_namespaces, args.exclude_deployments, dry_run=args.dry_run)
         except Exception:
             logger.exception('Failed to autoscale')
         if args.once:

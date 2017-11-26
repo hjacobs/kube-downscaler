@@ -62,16 +62,15 @@ def autoscale(exclude_namespaces: set, exclude_deployments: set, dry_run: bool=F
 
     is_workday = 0 <= now.weekday() <= 4
     is_worktime = is_workday and (7 <= now.hour < 21)
-    print(now, is_workday, is_worktime)
+    logger.info('Current time: %s (work time: %s)', now, is_worktime)
 
     deployments = pykube.Deployment.objects(api, namespace=pykube.all)
     for deploy in deployments:
 
         if deploy.name not in exclude_deployments and deploy.namespace not in exclude_namespaces:
-            print(deploy.name)
             replicas = deploy.obj['spec']['replicas']
             original_replicas = deploy.annotations.get('downscaler/original-replicas')
-            print(replicas, original_replicas)
+            logger.debug('Deployment %s has %s replicas (original: %s)', deploy.name, replicas, original_replicas)
             if is_worktime and replicas == 0 and original_replicas:
                 # scale up
                 deploy.obj['spec']['replicas'] = int(original_replicas)
@@ -89,9 +88,9 @@ def main():
                         action='store_true')
     parser.add_argument('--debug', '-d', help='Debug mode: print more information', action='store_true')
     parser.add_argument('--once', help='Run loop only once and exit', action='store_true')
-    parser.add_argument('--interval', type=int, help='Loop interval (default: 60s)', default=60)
+    parser.add_argument('--interval', type=int, help='Loop interval (default: 300s)', default=300)
     parser.add_argument('--exclude-namespaces', nargs='*', help='', default=['kube-system'])
-    parser.add_argument('--exclude-deployments', nargs='*', help='', default=['downscaler'])
+    parser.add_argument('--exclude-deployments', nargs='*', help='', default=['kube-downscaler', 'downscaler'])
     args = parser.parse_args()
 
     logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s', level=logging.DEBUG if args.debug else logging.INFO)

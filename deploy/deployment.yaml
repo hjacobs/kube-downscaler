@@ -1,0 +1,30 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    application: kube-downscaler
+    version: v0.1
+  name: kube-downscaler
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      application: kube-downscaler
+  template:
+    metadata:
+      labels:
+        application: kube-downscaler
+        version: v0.1
+    spec:
+      containers:
+      - name: downscaler
+        image: hjacobs/kube-downscaler:0.1
+        args:
+          - --debug
+        resources:
+          limits:
+            cpu: 200m
+            memory: 100Mi
+          requests:
+            cpu: 50m
+            memory: 50Mi

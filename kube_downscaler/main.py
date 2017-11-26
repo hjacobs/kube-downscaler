@@ -51,12 +51,12 @@ def get_kube_api():
     return api
 
 
-def autoscale(default_uptime: str, default_downtime: str, exclude_namespaces: set, exclude_deployments: set, dry_run: bool=False):
+def autoscale(namespace: str, default_uptime: str, default_downtime: str, exclude_namespaces: set, exclude_deployments: set, dry_run: bool=False):
     api = get_kube_api()
 
     now = datetime.datetime.utcnow()
 
-    deployments = pykube.Deployment.objects(api, namespace=pykube.all)
+    deployments = pykube.Deployment.objects(api, namespace=(namespace or pykube.all))
     for deploy in deployments:
 
         try:
@@ -102,6 +102,7 @@ def main():
     parser.add_argument('--debug', '-d', help='Debug mode: print more information', action='store_true')
     parser.add_argument('--once', help='Run loop only once and exit', action='store_true')
     parser.add_argument('--interval', type=int, help='Loop interval (default: 300s)', default=300)
+    parser.add_argument('--namespace', help='Namespace')
     parser.add_argument('--default-uptime', help='Default time range to scale up for (default: always)',
                         default=os.getenv('DEFAULT_UPTIME', 'always'))
     parser.add_argument('--default-downtime', help='Default time range to scale down for (default: never)',
@@ -121,7 +122,7 @@ def main():
 
     while True:
         try:
-            autoscale(args.default_uptime, args.default_downtime, args.exclude_namespaces.split(','), args.exclude_deployments.split(','), dry_run=args.dry_run)
+            autoscale(args.namespace, args.default_uptime, args.default_downtime, args.exclude_namespaces.split(','), args.exclude_deployments.split(','), dry_run=args.dry_run)
         except Exception:
             logger.exception('Failed to autoscale')
         if args.once:

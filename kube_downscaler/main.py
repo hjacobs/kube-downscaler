@@ -114,6 +114,8 @@ def main():
 
     logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s', level=logging.DEBUG if args.debug else logging.INFO)
 
+    logger.info('Downscaler started with config: %s', args)
+
     if args.dry_run:
         logger.info('**DRY-RUN**: no downscaling will be performed!')
 

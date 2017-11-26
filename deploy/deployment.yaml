@@ -20,7 +20,12 @@ spec:
       - name: downscaler
         image: hjacobs/kube-downscaler:0.1
         args:
-          - --debug
+          # dry run by default, remove to perform downscaling
+          - --dry-run
+        envFrom:
+          - configMapRef:
+              name: kube-downscaler
+              optional: true
         resources:
           limits:
             cpu: 200m

@@ -81,10 +81,11 @@ def autoscale(namespace: str, default_uptime: str, default_downtime: str, exclud
                     deploy.obj['spec']['replicas'] = int(original_replicas)
                     update_needed = True
                 elif not is_uptime and replicas > 0:
+                    target_replicas = 0
                     logger.info('Scaling down deployment %s/%s from %s to %s replicas (uptime: %s, downtime: %s)',
-                                deploy.namespace, deploy.name, original_replicas, replicas, uptime, downtime)
+                                deploy.namespace, deploy.name, replicas, target_replicas, uptime, downtime)
                     deploy.annotations['downscaler/original-replicas'] = str(replicas)
-                    deploy.obj['spec']['replicas'] = 0
+                    deploy.obj['spec']['replicas'] = target_replicas
                     update_needed = True
                 if update_needed:
                     if dry_run:

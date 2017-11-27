@@ -75,7 +75,7 @@ def autoscale(namespace: str, default_uptime: str, default_downtime: str, exclud
                 logger.debug('Deployment %s/%s has %s replicas (original: %s, uptime: %s)',
                              deploy.namespace, deploy.name, replicas, original_replicas, uptime)
                 update_needed = False
-                if is_uptime and replicas == 0 and original_replicas:
+                if is_uptime and replicas == 0 and original_replicas and int(original_replicas) > 0:
                     logger.info('Scaling up deployment %s/%s from %s to %s replicas (uptime: %s, downtime: %s)',
                                 deploy.namespace, deploy.name, replicas, original_replicas, uptime, downtime)
                     deploy.obj['spec']['replicas'] = int(original_replicas)

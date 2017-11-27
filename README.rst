@@ -10,7 +10,14 @@ Kubernetes Downscaler
    :target: https://coveralls.io/github/hjacobs/kube-downscaler?branch=master
    :alt: Code Coverage
 
-Scale down Kubernetes deployments after work hours.
+Scale down Kubernetes deployments during non-work hours.
+The downscaler checks all deployments in the cluster every 5 minutes.
+It will scale the deployment's replicas to zero if all of the following conditions are met:
+
+* current time is not part of the "uptime" schedule (annotation ``downscaler/uptime``) or current time is part of the "downtime" schedule (``downscaler/downtime``)
+* the deployment's namespace is not part of the exclusion list (``kube-system`` is excluded by default)
+* the deployment's name is not part of the exclusion list
+* the deployment is not marked for exclusion (annotation ``downscaler/exclude=true``)
 
 
 Usage

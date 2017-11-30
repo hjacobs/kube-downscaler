@@ -17,7 +17,7 @@ It will scale the deployment's replicas to zero if all of the following conditio
 * current time is not part of the "uptime" schedule (annotation ``downscaler/uptime``) or current time is part of the "downtime" schedule (``downscaler/downtime``)
 * the deployment's namespace is not part of the exclusion list (``kube-system`` is excluded by default)
 * the deployment's name is not part of the exclusion list
-* the deployment is not marked for exclusion (annotation ``downscaler/exclude=true``)
+* the deployment is not marked for exclusion (annotation ``downscaler/exclude: "true"``)
 
 
 Usage

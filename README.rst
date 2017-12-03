@@ -11,7 +11,7 @@ Kubernetes Downscaler
    :alt: Code Coverage
 
 Scale down Kubernetes deployments during non-work hours.
-The downscaler checks all deployments in the cluster every 5 minutes.
+The downscaler checks all deployments in the cluster every 5 minutes (configurable).
 It will scale the deployment's replicas to zero if all of the following conditions are met:
 
 * current time is not part of the "uptime" schedule (annotation ``downscaler/uptime``) or current time is part of the "downtime" schedule (``downscaler/downtime``)
@@ -19,6 +19,11 @@ It will scale the deployment's replicas to zero if all of the following conditio
 * the deployment's name is not part of the exclusion list
 * the deployment is not marked for exclusion (annotation ``downscaler/exclude: "true"``)
 
+Example use cases:
+
+* Deploy the downscaler to a test (non-prod) cluster with a default uptime or downtime time range to scale down all deployments during the night and weekend.
+* Deploy the downscaler to a production cluster without any default uptime/downtime setting and scale down specific deployments by setting the ``downscaler/uptime`` (or ``downscaler/downtime``) annotation.
+  This might be useful for internal tooling frontends which are only needed during work time.
 
 Usage
 =====

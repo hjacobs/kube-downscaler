@@ -25,6 +25,9 @@ Example use cases:
 * Deploy the downscaler to a production cluster without any default uptime/downtime setting and scale down specific deployments by setting the ``downscaler/uptime`` (or ``downscaler/downtime``) annotation.
   This might be useful for internal tooling frontends which are only needed during work time.
 
+You need to combine the downscaler with an elastic cluster autoscaler to actually **save cloud costs**.
+The `kube-aws-autoscaler <https://github.com/hjacobs/kube-aws-autoscaler>`_ was tested to work fine with the downscaler.
+
 Usage
 =====
 

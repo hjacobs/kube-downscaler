@@ -82,4 +82,34 @@ Available command line options:
 ``--exclude-namespaces``
     Exclude namespaces from downscaling (default: kube-system), can also be configured via environment variable ``EXCLUDE_NAMESPACES``
 ``--exclude-deployments``
-    Exclude specific deployments from downscaling (default: kube-downscaler,downscaler), env var ``EXCLUDE_DEPLOYMENTS``
+    Exclude specific deployments from downscaling (default: kube-downscaler, downscaler), can also be configured via environment variable ``EXCLUDE_DEPLOYMENTS``
+
+
+Contributing
+============
+
+Easiest way to contribute is to provide feedback! We would love to hear what you like and what you think is missing.
+Create an issue or `ping try_except_ on Twitter`_.
+
+PRs are welcome. Please also have a look at `issues labeled with "help wanted"`_.
+
+
+License
+=======
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see http://www.gnu.org/licenses/.
+
+.. _ping try_except_ on Twitter: https://twitter.com/try_except_
+.. _issues labeled with "help wanted": https://github.com/hjacobs/kube-downscaler/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22
+

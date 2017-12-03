@@ -29,7 +29,11 @@ Deploy the downscaler into your cluster via:
 
     $ kubectl apply -f deploy/
 
-The example configuration uses the ``--dry-run`` as a safety flag to prevent downscaling --- remove it to enable the downscaler.
+The example configuration uses the ``--dry-run`` as a safety flag to prevent downscaling --- remove it to enable the downscaler, e.g. by editing the deployment:
+
+.. code-block:: bash
+
+    $ kubectl edit deploy kube-downscaler
 
 
 Configuration
@@ -48,3 +52,26 @@ To only downscale during the weekend and already Friday after 20:00:
 .. code-block:: bash
 
     DEFAULT_DOWNTIME="Sat-Sun 00:00-24:00 CET,Fri-Fri 20:00-24:00 CET'
+
+Each time specification must have the format ``<WEEKDAY-FROM>-<WEEKDAY-TO-INCLUSIVE> <HH>:<MM>-<HH>:<MM> <TIMEZONE>``. The timezone value can be any `Olson timezone <https://en.wikipedia.org/wiki/Tz_database>`_, e.g. "US/Eastern", "PST" or "UTC".
+
+Available command line options:
+
+``--dry-run``
+    Dry run mode: do not change anything, just print what would be done
+``--debug``
+    Debug mode: print more information
+``--once``
+    Run loop only once and exit
+``--interval``
+    Loop interval (default: 300s)
+``--namespace``
+    Namespace (default: all namespaces)
+``--default-uptime``
+    Default time range to scale up for (default: always), can also be configured via environment variable ``DEFAULT_UPTIME`` or via the annotation ``downscaler/uptime`` on each deployment
+``--default-downtime``
+    Default time range to scale down for (default: never), can also be configured via environment variable ``DEFAULT_DOWNTIME`` or via the annotation ``downscaler/downtime`` on each deployment
+``--exclude-namespaces``
+    Exclude namespaces from downscaling (default: kube-system), can also be configured via environment variable ``EXCLUDE_NAMESPACES``
+``--exclude-deployments``
+    Exclude specific deployments from downscaling (default: kube-downscaler,downscaler), env var ``EXCLUDE_DEPLOYMENTS``

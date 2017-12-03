@@ -1,4 +1,4 @@
-apiVersion: apps/v1beta1
+apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   labels:
@@ -31,5 +31,5 @@ spec:
             cpu: 200m
             memory: 100Mi
           requests:
-            cpu: 50m
+            cpu: 10m
             memory: 50Mi

@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 
 import argparse
+import contextlib
 import datetime
 import pytz
 import logging
 import os
 import re
+import signal
+import sys
 import time
 
 import pykube
@@ -96,6 +99,26 @@ def autoscale(namespace: str, default_uptime: str, default_downtime: str, exclud
             logger.exception('Failed to process deployment %s/%s', deploy.namespace, deploy.name)
 
 
+class GracefulShutdown:
+    shutdown_now = False
+    safe_to_exit = False
+
+    def __init__(self):
+        signal.signal(signal.SIGINT, self.exit_gracefully)
+        signal.signal(signal.SIGTERM, self.exit_gracefully)
+
+    def exit_gracefully(self, signum, frame):
+        self.shutdown_now = True
+        if self.safe_to_exit:
+            sys.exit(0)
+
+    @contextlib.contextmanager
+    def safe_exit(self):
+        self.safe_to_exit = True
+        yield
+        self.safe_to_exit = False
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--dry-run', help='Dry run mode: do not change anything, just print what would be done',
@@ -116,6 +139,8 @@ def main():
 
     logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s', level=logging.DEBUG if args.debug else logging.INFO)
 
+    handler = GracefulShutdown()
+
     logger.info('Downscaler started with config: %s', args)
 
     if args.dry_run:
@@ -126,6 +151,7 @@ def main():
             autoscale(args.namespace, args.default_uptime, args.default_downtime, args.exclude_namespaces.split(','), args.exclude_deployments.split(','), dry_run=args.dry_run)
         except Exception:
             logger.exception('Failed to autoscale')
-        if args.once:
+        if args.once or handler.shutdown_now:
             return
-        time.sleep(args.interval)
+        with handler.safe_exit():
+            time.sleep(args.interval)

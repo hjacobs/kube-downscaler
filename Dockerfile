@@ -1,14 +1,13 @@
-FROM alpine:3.6
+FROM python:3.7-alpine3.8
 MAINTAINER Henning Jacobs <henning@jacobs1.de>
 
-RUN apk add --no-cache python3 && \
-    pip3 install pykube && \
-    rm -rf /var/cache/apk/* /root/.cache /tmp/* 
+WORKDIR /
+
+RUN pip3 install pykube
 
 WORKDIR /
 
 COPY kube_downscaler /kube_downscaler
-COPY scm-source.json /
 
 ARG VERSION=dev
 RUN sed -i "s/__version__ = .*/__version__ = '${VERSION}'/" /kube_downscaler/__init__.py

@@ -31,7 +31,7 @@ The `kube-aws-autoscaler <https://github.com/hjacobs/kube-aws-autoscaler>`_ was 
 Usage
 =====
 
-Deploy the downscaler into your cluster via:
+Deploy the downscaler into your cluster via (also works with Minikube):
 
 .. code-block:: bash
 

@@ -12,12 +12,24 @@ import sys
 import time
 
 import pykube
+from pykube.objects import NamespacedAPIObject
+from pykube.mixins import ReplicatedMixin, ScalableMixin
 
 WEEKDAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']
 
 TIME_SPEC_PATTERN = re.compile('^([a-zA-Z]{3})-([a-zA-Z]{3}) (\d\d):(\d\d)-(\d\d):(\d\d) (?P<tz>[a-zA-Z/]+)$')
 
 logger = logging.getLogger('downscaler')
+
+
+class Deployment(NamespacedAPIObject, ReplicatedMixin, ScalableMixin):
+    '''
+    Use latest workloads API version (apps/v1), pykube is stuck with old version
+    '''
+
+    version = "apps/v1"
+    endpoint = "deployments"
+    kind = "Deployment"
 
 
 def matches_time_spec(time: datetime.datetime, spec: str):
@@ -59,7 +71,7 @@ def autoscale(namespace: str, default_uptime: str, default_downtime: str, exclud
 
     now = datetime.datetime.utcnow()
 
-    deployments = pykube.Deployment.objects(api, namespace=(namespace or pykube.all))
+    deployments = Deployment.objects(api, namespace=(namespace or pykube.all))
     for deploy in deployments:
 
         try:
@@ -148,7 +160,8 @@ def main():
 
     while True:
         try:
-            autoscale(args.namespace, args.default_uptime, args.default_downtime, args.exclude_namespaces.split(','), args.exclude_deployments.split(','), dry_run=args.dry_run)
+            autoscale(args.namespace, args.default_uptime, args.default_downtime,
+                      args.exclude_namespaces.split(','), args.exclude_deployments.split(','), dry_run=args.dry_run)
         except Exception:
             logger.exception('Failed to autoscale')
         if args.once or handler.shutdown_now:

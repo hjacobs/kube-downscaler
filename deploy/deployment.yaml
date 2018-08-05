@@ -1,4 +1,4 @@
-apiVersion: apps/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
@@ -19,6 +19,7 @@ spec:
       serviceAccountName: kube-downscaler
       containers:
       - name: downscaler
+        # see https://github.com/hjacobs/kube-downscaler/releases
         image: hjacobs/kube-downscaler:0.1
         args:
           # dry run by default, remove to perform downscaling
@@ -31,8 +32,11 @@ spec:
               optional: true
         resources:
           limits:
-            cpu: 200m
             memory: 100Mi
           requests:
-            cpu: 10m
+            cpu: 5m
             memory: 50Mi
+        securityContext:
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 1000

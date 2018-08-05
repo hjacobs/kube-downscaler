@@ -66,7 +66,15 @@ def get_kube_api():
     return api
 
 
-def autoscale(namespace: str, default_uptime: str, default_downtime: str, exclude_namespaces: set, exclude_deployments: set, dry_run: bool=False):
+def within_grace_period(deploy, grace_period: int):
+    creation_time = datetime.datetime.strptime(deploy.metadata['creationTimestamp'], '%Y-%m-%dT%H:%M:%SZ')
+    now = datetime.datetime.utcnow()
+    delta = now - creation_time
+    return delta.total_seconds() <= grace_period
+
+
+def autoscale(namespace: str, default_uptime: str, default_downtime: str, exclude_namespaces: set, exclude_deployments: set, dry_run: bool=False,
+              grace_period: int=0):
     api = get_kube_api()
 
     now = datetime.datetime.utcnow()
@@ -96,12 +104,15 @@ def autoscale(namespace: str, default_uptime: str, default_downtime: str, exclud
                     deploy.obj['spec']['replicas'] = int(original_replicas)
                     update_needed = True
                 elif not is_uptime and replicas > 0:
-                    target_replicas = 0
-                    logger.info('Scaling down deployment %s/%s from %s to %s replicas (uptime: %s, downtime: %s)',
-                                deploy.namespace, deploy.name, replicas, target_replicas, uptime, downtime)
-                    deploy.annotations['downscaler/original-replicas'] = str(replicas)
-                    deploy.obj['spec']['replicas'] = target_replicas
-                    update_needed = True
+                    if within_grace_period(deploy, grace_period):
+                        logger.info('Deployment %s/%s within grace period (%ds), not scaling down (yet)', deploy.namespace, deploy.name, grace_period)
+                    else:
+                        target_replicas = 0
+                        logger.info('Scaling down deployment %s/%s from %s to %s replicas (uptime: %s, downtime: %s)',
+                                    deploy.namespace, deploy.name, replicas, target_replicas, uptime, downtime)
+                        deploy.annotations['downscaler/original-replicas'] = str(replicas)
+                        deploy.obj['spec']['replicas'] = target_replicas
+                        update_needed = True
                 if update_needed:
                     if dry_run:
                         logger.info('**DRY-RUN**: would update deployment %s/%s', deploy.namespace, deploy.name)
@@ -139,6 +150,7 @@ def main():
     parser.add_argument('--once', help='Run loop only once and exit', action='store_true')
     parser.add_argument('--interval', type=int, help='Loop interval (default: 300s)', default=300)
     parser.add_argument('--namespace', help='Namespace')
+    parser.add_argument('--grace-period', type=int, help='Grace period in seconds for deployments before scaling down (default: 15min)', default=900)
     parser.add_argument('--default-uptime', help='Default time range to scale up for (default: always)',
                         default=os.getenv('DEFAULT_UPTIME', 'always'))
     parser.add_argument('--default-downtime', help='Default time range to scale down for (default: never)',
@@ -161,7 +173,8 @@ def main():
     while True:
         try:
             autoscale(args.namespace, args.default_uptime, args.default_downtime,
-                      args.exclude_namespaces.split(','), args.exclude_deployments.split(','), dry_run=args.dry_run)
+                      args.exclude_namespaces.split(','), args.exclude_deployments.split(','), dry_run=args.dry_run,
+                      grace_period=args.grace_period)
         except Exception:
             logger.exception('Failed to autoscale')
         if args.once or handler.shutdown_now:

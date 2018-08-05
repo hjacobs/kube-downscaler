@@ -10,3 +10,4 @@ scm-source.json
 .coverage
 *.bak
 htmlcov/
+.pytest_cache/

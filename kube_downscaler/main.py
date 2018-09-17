@@ -73,15 +73,26 @@ def within_grace_period(deploy, grace_period: int):
     return delta.total_seconds() <= grace_period
 
 
+def pods_force_uptime(api, namespace: str):
+    """Returns True if there are any running pods which require the deployments to be scaled back up"""
+    for pod in pykube.Pod.objects(api).filter(namespace=(namespace or pykube.all)):
+        if pod.obj.get('status', {}).get('phase') in ('Succeeded', 'Failed'):
+            continue
+        if pod.annotations.get('downscaler/force-uptime') == 'true':
+            logger.info('Forced uptime because of %s/%s', pod.namespace, pod.name)
+            return True
+    return False
+
+
 def autoscale(namespace: str, default_uptime: str, default_downtime: str, exclude_namespaces: set, exclude_deployments: set, dry_run: bool=False,
               grace_period: int=0):
     api = get_kube_api()
 
     now = datetime.datetime.utcnow()
+    forced_uptime = pods_force_uptime(api, namespace)
 
     deployments = Deployment.objects(api, namespace=(namespace or pykube.all))
     for deploy in deployments:
-
         try:
             # any value different from "false" will ignore the deployment (to be on the safe side)
             exclude = deploy.annotations.get('downscaler/exclude', 'false') != 'false'
@@ -90,9 +101,15 @@ def autoscale(namespace: str, default_uptime: str, default_downtime: str, exclud
                 logger.debug('Deployment %s/%s was excluded', deploy.namespace, deploy.name)
             else:
                 replicas = deploy.obj['spec']['replicas']
-                uptime = deploy.annotations.get('downscaler/uptime', default_uptime)
-                downtime = deploy.annotations.get('downscaler/downtime', default_downtime)
-                is_uptime = matches_time_spec(now, uptime) and not matches_time_spec(now, downtime)
+
+                if forced_uptime:
+                    uptime = "forced"
+                    downtime = "ignored"
+                    is_uptime = True
+                else:
+                    uptime = deploy.annotations.get('downscaler/uptime', default_uptime)
+                    downtime = deploy.annotations.get('downscaler/downtime', default_downtime)
+                    is_uptime = matches_time_spec(now, uptime) and not matches_time_spec(now, downtime)
 
                 original_replicas = deploy.annotations.get('downscaler/original-replicas')
                 logger.debug('Deployment %s/%s has %s replicas (original: %s, uptime: %s)',
@@ -148,7 +165,7 @@ def main():
                         action='store_true')
     parser.add_argument('--debug', '-d', help='Debug mode: print more information', action='store_true')
     parser.add_argument('--once', help='Run loop only once and exit', action='store_true')
-    parser.add_argument('--interval', type=int, help='Loop interval (default: 300s)', default=300)
+    parser.add_argument('--interval', type=int, help='Loop interval (default: 30s)', default=30)
     parser.add_argument('--namespace', help='Namespace')
     parser.add_argument('--grace-period', type=int, help='Grace period in seconds for deployments before scaling down (default: 15min)', default=900)
     parser.add_argument('--default-uptime', help='Default time range to scale up for (default: always)',

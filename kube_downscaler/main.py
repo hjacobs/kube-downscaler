@@ -10,6 +10,7 @@ import re
 import signal
 import sys
 import time
+import itertools
 
 import pykube
 from pykube.objects import NamespacedAPIObject
@@ -31,6 +32,14 @@ class Deployment(NamespacedAPIObject, ReplicatedMixin, ScalableMixin):
     endpoint = "deployments"
     kind = "Deployment"
 
+class Statefulset(NamespacedAPIObject, ReplicatedMixin, ScalableMixin):
+    '''
+    Use latest workloads API version (apps/v1), pykube is stuck with old version
+    '''
+
+    version = "apps/v1"
+    endpoint = "statefulsets"
+    kind = "StatefulSet"
 
 def matches_time_spec(time: datetime.datetime, spec: str):
     if spec.lower() == 'always':
@@ -91,8 +100,11 @@ def autoscale(namespace: str, default_uptime: str, default_downtime: str, exclud
     now = datetime.datetime.utcnow()
     forced_uptime = pods_force_uptime(api, namespace)
 
+    statefulsets = Statefulset.objects(api, namespace=(namespace or pykube.all))
+
     deployments = Deployment.objects(api, namespace=(namespace or pykube.all))
-    for deploy in deployments:
+
+    for deploy in itertools.chain(deployments, statefulsets):
         try:
             # any value different from "false" will ignore the deployment (to be on the safe side)
             exclude = deploy.annotations.get('downscaler/exclude', 'false') != 'false'

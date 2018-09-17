@@ -9,6 +9,14 @@ metadata:
   name: kube-downscaler
 rules:
 - apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - get
+  - watch
+  - list
+- apiGroups:
   - extensions
   - apps
   resources:

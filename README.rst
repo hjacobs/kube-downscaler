@@ -18,6 +18,7 @@ It will scale the deployment's replicas to zero if all of the following conditio
 * the deployment's namespace is not part of the exclusion list (``kube-system`` is excluded by default)
 * the deployment's name is not part of the exclusion list
 * the deployment is not marked for exclusion (annotation ``downscaler/exclude: "true"``)
+* there are no active pods that force the whole cluster into uptime (annotation ``downscaler/force-uptime: "true"``)
 
 Example use cases:
 

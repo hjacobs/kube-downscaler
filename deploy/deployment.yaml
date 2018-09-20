@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   labels:
     application: kube-downscaler
-    version: v0.3
+    version: v0.4
   name: kube-downscaler
 spec:
   replicas: 1
@@ -14,13 +14,13 @@ spec:
     metadata:
       labels:
         application: kube-downscaler
-        version: v0.3
+        version: v0.4
     spec:
       serviceAccountName: kube-downscaler
       containers:
       - name: downscaler
         # see https://github.com/hjacobs/kube-downscaler/releases
-        image: hjacobs/kube-downscaler:0.3
+        image: hjacobs/kube-downscaler:0.4
         args:
           # dry run by default, remove to perform downscaling
           - --dry-run

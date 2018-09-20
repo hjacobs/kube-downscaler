@@ -20,6 +20,8 @@ WEEKDAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']
 
 TIME_SPEC_PATTERN = re.compile(r'^([a-zA-Z]{3})-([a-zA-Z]{3}) (\d\d):(\d\d)-(\d\d):(\d\d) (?P<tz>[a-zA-Z/]+)$')
 
+ORIGINAL_REPLICAS_ANNOTATION = 'downscaler/original-replicas'
+
 logger = logging.getLogger('downscaler')
 
 
@@ -116,7 +118,7 @@ def autoscale_resource(resource: pykube.objects.NamespacedAPIObject,
                 downtime = resource.annotations.get('downscaler/downtime', default_downtime)
                 is_uptime = matches_time_spec(now, uptime) and not matches_time_spec(now, downtime)
 
-            original_replicas = resource.annotations.get('downscaler/original-replicas')
+            original_replicas = resource.annotations.get(ORIGINAL_REPLICAS_ANNOTATION)
             logger.debug('%s %s/%s has %s replicas (original: %s, uptime: %s)',
                          resource.kind, resource.namespace, resource.name, replicas, original_replicas, uptime)
             update_needed = False
@@ -125,6 +127,7 @@ def autoscale_resource(resource: pykube.objects.NamespacedAPIObject,
                             resource.kind, resource.namespace, resource.name, replicas, original_replicas,
                             uptime, downtime)
                 resource.obj['spec']['replicas'] = int(original_replicas)
+                resource.annotations[ORIGINAL_REPLICAS_ANNOTATION] = None
                 update_needed = True
             elif not is_uptime and replicas > 0:
                 if within_grace_period(resource, grace_period):
@@ -135,7 +138,7 @@ def autoscale_resource(resource: pykube.objects.NamespacedAPIObject,
                     logger.info('Scaling down %s %s/%s from %s to %s replicas (uptime: %s, downtime: %s)',
                                 resource.kind, resource.namespace, resource.name, replicas, target_replicas,
                                 uptime, downtime)
-                    resource.annotations['downscaler/original-replicas'] = str(replicas)
+                    resource.annotations[ORIGINAL_REPLICAS_ANNOTATION] = str(replicas)
                     resource.obj['spec']['replicas'] = target_replicas
                     update_needed = True
             if update_needed:

@@ -10,8 +10,7 @@ Kubernetes Downscaler
    :target: https://coveralls.io/github/hjacobs/kube-downscaler?branch=master
    :alt: Code Coverage
 
-Scale down Kubernetes deployments and statefulsets during non-work hours.
-The downscaler checks all deployments in the cluster every 5 minutes (configurable).
+Scale down Kubernetes deployments and/or statefulsets during non-work hours.
 
 Deployments are interchangeable by statefulset for this whole guide.
 
@@ -78,9 +77,11 @@ Available command line options:
 ``--once``
     Run loop only once and exit
 ``--interval``
-    Loop interval (default: 300s)
+    Loop interval (default: 30s)
 ``--namespace``
     Namespace (default: all namespaces)
+``--kind``
+    Downscale resources of this kind (default: deployment)
 ``--default-uptime``
     Default time range to scale up for (default: always), can also be configured via environment variable ``DEFAULT_UPTIME`` or via the annotation ``downscaler/uptime`` on each deployment
 ``--default-downtime``
@@ -89,6 +90,8 @@ Available command line options:
     Exclude namespaces from downscaling (default: kube-system), can also be configured via environment variable ``EXCLUDE_NAMESPACES``
 ``--exclude-deployments``
     Exclude specific deployments from downscaling (default: kube-downscaler, downscaler), can also be configured via environment variable ``EXCLUDE_DEPLOYMENTS``
+``--exclude-statefulsets``
+    Exclude specific statefulsets from statefulsets, can also be configured via environment variable ``EXCLUDE_STATEFULSETS``
 
 
 Contributing

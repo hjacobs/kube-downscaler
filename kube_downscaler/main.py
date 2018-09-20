@@ -3,22 +3,22 @@
 import argparse
 import contextlib
 import datetime
-import pytz
 import logging
 import os
 import re
 import signal
 import sys
 import time
-import itertools
+from typing import FrozenSet
 
 import pykube
-from pykube.objects import NamespacedAPIObject
+import pytz
 from pykube.mixins import ReplicatedMixin, ScalableMixin
+from pykube.objects import NamespacedAPIObject
 
 WEEKDAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']
 
-TIME_SPEC_PATTERN = re.compile('^([a-zA-Z]{3})-([a-zA-Z]{3}) (\d\d):(\d\d)-(\d\d):(\d\d) (?P<tz>[a-zA-Z/]+)$')
+TIME_SPEC_PATTERN = re.compile(r'^([a-zA-Z]{3})-([a-zA-Z]{3}) (\d\d):(\d\d)-(\d\d):(\d\d) (?P<tz>[a-zA-Z/]+)$')
 
 logger = logging.getLogger('downscaler')
 
@@ -32,6 +32,7 @@ class Deployment(NamespacedAPIObject, ReplicatedMixin, ScalableMixin):
     endpoint = "deployments"
     kind = "Deployment"
 
+
 class Statefulset(NamespacedAPIObject, ReplicatedMixin, ScalableMixin):
     '''
     Use latest workloads API version (apps/v1), pykube is stuck with old version
@@ -40,6 +41,7 @@ class Statefulset(NamespacedAPIObject, ReplicatedMixin, ScalableMixin):
     version = "apps/v1"
     endpoint = "statefulsets"
     kind = "StatefulSet"
+
 
 def matches_time_spec(time: datetime.datetime, spec: str):
     if spec.lower() == 'always':
@@ -50,7 +52,8 @@ def matches_time_spec(time: datetime.datetime, spec: str):
         spec_ = spec_.strip()
         match = TIME_SPEC_PATTERN.match(spec_)
         if not match:
-            raise ValueError('Time spec value "{}" does not match format (Mon-Fri 06:30-20:30 Europe/Berlin)'.format(spec))
+            raise ValueError(
+                'Time spec value "{}" does not match format (Mon-Fri 06:30-20:30 Europe/Berlin)'.format(spec))
         day_from = WEEKDAYS.index(match.group(1).upper())
         day_to = WEEKDAYS.index(match.group(2).upper())
         day_matches = day_from <= time.weekday() <= day_to
@@ -93,62 +96,83 @@ def pods_force_uptime(api, namespace: str):
     return False
 
 
-def autoscale(namespace: str, default_uptime: str, default_downtime: str, exclude_namespaces: set, exclude_deployments: set, dry_run: bool=False,
-              grace_period: int=0):
+def autoscale_resource(resource: pykube.objects.NamespacedAPIObject,
+                       default_uptime: str, default_downtime: str, forced_uptime: bool, dry_run: bool,
+                       now: datetime.datetime, grace_period: int):
+    try:
+        # any value different from "false" will ignore the resource (to be on the safe side)
+        exclude = resource.annotations.get('downscaler/exclude', 'false') != 'false'
+        if exclude:
+            logger.debug('%s %s/%s was excluded', resource.kind, resource.namespace, resource.name)
+        else:
+            replicas = resource.obj['spec']['replicas']
+
+            if forced_uptime:
+                uptime = "forced"
+                downtime = "ignored"
+                is_uptime = True
+            else:
+                uptime = resource.annotations.get('downscaler/uptime', default_uptime)
+                downtime = resource.annotations.get('downscaler/downtime', default_downtime)
+                is_uptime = matches_time_spec(now, uptime) and not matches_time_spec(now, downtime)
+
+            original_replicas = resource.annotations.get('downscaler/original-replicas')
+            logger.debug('%s %s/%s has %s replicas (original: %s, uptime: %s)',
+                         resource.kind, resource.namespace, resource.name, replicas, original_replicas, uptime)
+            update_needed = False
+            if is_uptime and replicas == 0 and original_replicas and int(original_replicas) > 0:
+                logger.info('Scaling up %s %s/%s from %s to %s replicas (uptime: %s, downtime: %s)',
+                            resource.kind, resource.namespace, resource.name, replicas, original_replicas,
+                            uptime, downtime)
+                resource.obj['spec']['replicas'] = int(original_replicas)
+                update_needed = True
+            elif not is_uptime and replicas > 0:
+                if within_grace_period(resource, grace_period):
+                    logger.info('%s %s/%s within grace period (%ds), not scaling down (yet)',
+                                resource.kind, resource.namespace, resource.name, grace_period)
+                else:
+                    target_replicas = 0
+                    logger.info('Scaling down %s %s/%s from %s to %s replicas (uptime: %s, downtime: %s)',
+                                resource.kind, resource.namespace, resource.name, replicas, target_replicas,
+                                uptime, downtime)
+                    resource.annotations['downscaler/original-replicas'] = str(replicas)
+                    resource.obj['spec']['replicas'] = target_replicas
+                    update_needed = True
+            if update_needed:
+                if dry_run:
+                    logger.info('**DRY-RUN**: would update %s %s/%s', resource.kind, resource.namespace, resource.name)
+                else:
+                    resource.update()
+    except Exception:
+        logger.exception('Failed to process %s %s/%s', resource.kind, resource.namespace, resource.name)
+
+
+def autoscale_resources(api, kind, namespace: str,
+                        exclude_namespaces: FrozenSet[str], exclude_names: FrozenSet[str],
+                        default_uptime: str, default_downtime: str, forced_uptime: bool, dry_run: bool,
+                        now: datetime.datetime, grace_period: int):
+    for resource in kind.objects(api, namespace=(namespace or pykube.all)):
+        if resource.namespace in exclude_namespaces or resource.name in exclude_names:
+            continue
+        autoscale_resource(resource, default_uptime, default_downtime, forced_uptime, dry_run, now, grace_period)
+
+
+def autoscale(namespace: str, default_uptime: str, default_downtime: str, kinds: FrozenSet[str],
+              exclude_namespaces: FrozenSet[str],
+              exclude_deployments: FrozenSet[str],
+              exclude_statefulsets: FrozenSet[str],
+              dry_run: bool, grace_period: int):
     api = get_kube_api()
 
     now = datetime.datetime.utcnow()
     forced_uptime = pods_force_uptime(api, namespace)
 
-    statefulsets = Statefulset.objects(api, namespace=(namespace or pykube.all))
-
-    deployments = Deployment.objects(api, namespace=(namespace or pykube.all))
-
-    for deploy in itertools.chain(deployments, statefulsets):
-        try:
-            # any value different from "false" will ignore the deployment (to be on the safe side)
-            exclude = deploy.annotations.get('downscaler/exclude', 'false') != 'false'
-            exclude = exclude or deploy.name in exclude_deployments or deploy.namespace in exclude_namespaces
-            if exclude:
-                logger.debug('Deployment %s/%s was excluded', deploy.namespace, deploy.name)
-            else:
-                replicas = deploy.obj['spec']['replicas']
-
-                if forced_uptime:
-                    uptime = "forced"
-                    downtime = "ignored"
-                    is_uptime = True
-                else:
-                    uptime = deploy.annotations.get('downscaler/uptime', default_uptime)
-                    downtime = deploy.annotations.get('downscaler/downtime', default_downtime)
-                    is_uptime = matches_time_spec(now, uptime) and not matches_time_spec(now, downtime)
-
-                original_replicas = deploy.annotations.get('downscaler/original-replicas')
-                logger.debug('Deployment %s/%s has %s replicas (original: %s, uptime: %s)',
-                             deploy.namespace, deploy.name, replicas, original_replicas, uptime)
-                update_needed = False
-                if is_uptime and replicas == 0 and original_replicas and int(original_replicas) > 0:
-                    logger.info('Scaling up deployment %s/%s from %s to %s replicas (uptime: %s, downtime: %s)',
-                                deploy.namespace, deploy.name, replicas, original_replicas, uptime, downtime)
-                    deploy.obj['spec']['replicas'] = int(original_replicas)
-                    update_needed = True
-                elif not is_uptime and replicas > 0:
-                    if within_grace_period(deploy, grace_period):
-                        logger.info('Deployment %s/%s within grace period (%ds), not scaling down (yet)', deploy.namespace, deploy.name, grace_period)
-                    else:
-                        target_replicas = 0
-                        logger.info('Scaling down deployment %s/%s from %s to %s replicas (uptime: %s, downtime: %s)',
-                                    deploy.namespace, deploy.name, replicas, target_replicas, uptime, downtime)
-                        deploy.annotations['downscaler/original-replicas'] = str(replicas)
-                        deploy.obj['spec']['replicas'] = target_replicas
-                        update_needed = True
-                if update_needed:
-                    if dry_run:
-                        logger.info('**DRY-RUN**: would update deployment %s/%s', deploy.namespace, deploy.name)
-                    else:
-                        deploy.update()
-        except Exception:
-            logger.exception('Failed to process deployment %s/%s', deploy.namespace, deploy.name)
+    if 'deployment' in kinds:
+        autoscale_resources(api, Deployment, namespace, exclude_namespaces, exclude_deployments,
+                            default_uptime, default_downtime, forced_uptime, dry_run, now, grace_period)
+    if 'statefulset' in kinds:
+        autoscale_resources(api, Statefulset, namespace, exclude_namespaces, exclude_statefulsets,
+                            default_uptime, default_downtime, forced_uptime, dry_run, now, grace_period)
 
 
 class GracefulShutdown:
@@ -179,18 +203,28 @@ def main():
     parser.add_argument('--once', help='Run loop only once and exit', action='store_true')
     parser.add_argument('--interval', type=int, help='Loop interval (default: 30s)', default=30)
     parser.add_argument('--namespace', help='Namespace')
-    parser.add_argument('--grace-period', type=int, help='Grace period in seconds for deployments before scaling down (default: 15min)', default=900)
+    parser.add_argument('--kind', choices=['deployment', 'statefulset'], nargs='+', default=['deployment'],
+                        help='Downscale resources of this kind (default: deployment)')
+    parser.add_argument('--grace-period', type=int,
+                        help='Grace period in seconds for deployments before scaling down (default: 15min)',
+                        default=900)
     parser.add_argument('--default-uptime', help='Default time range to scale up for (default: always)',
                         default=os.getenv('DEFAULT_UPTIME', 'always'))
     parser.add_argument('--default-downtime', help='Default time range to scale down for (default: never)',
                         default=os.getenv('DEFAULT_DOWNTIME', 'never'))
     parser.add_argument('--exclude-namespaces', help='Exclude namespaces from downscaling (default: kube-system)',
                         default=os.getenv('EXCLUDE_NAMESPACES', 'kube-system'))
-    parser.add_argument('--exclude-deployments', help='Exclude specific deployments from downscaling (default: kube-downscaler,downscaler)',
+    parser.add_argument('--exclude-deployments',
+                        help='Exclude specific deployments from downscaling (default: kube-downscaler,downscaler)',
                         default=os.getenv('EXCLUDE_DEPLOYMENTS', 'kube-downscaler,downscaler'))
+    parser.add_argument('--exclude-statefulsets',
+                        help='Exclude specific statefulsets from downscaling',
+                        default=os.getenv('EXCLUDE_STATEFULSETS', ''))
+
     args = parser.parse_args()
 
-    logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s', level=logging.DEBUG if args.debug else logging.INFO)
+    logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s',
+                        level=logging.DEBUG if args.debug else logging.INFO)
 
     handler = GracefulShutdown()
 
@@ -202,8 +236,11 @@ def main():
     while True:
         try:
             autoscale(args.namespace, args.default_uptime, args.default_downtime,
-                      args.exclude_namespaces.split(','), args.exclude_deployments.split(','), dry_run=args.dry_run,
-                      grace_period=args.grace_period)
+                      kinds=frozenset(args.kind),
+                      exclude_namespaces=frozenset(args.exclude_namespaces.split(',')),
+                      exclude_deployments=frozenset(args.exclude_deployments.split(',')),
+                      exclude_statefulsets=frozenset(args.exclude_statefulsets.split(',')),
+                      dry_run=args.dry_run, grace_period=args.grace_period)
         except Exception:
             logger.exception('Failed to autoscale')
         if args.once or handler.shutdown_now:

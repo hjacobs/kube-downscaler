@@ -55,7 +55,7 @@ def matches_time_spec(time: datetime.datetime, spec: str):
         match = TIME_SPEC_PATTERN.match(spec_)
         if not match:
             raise ValueError(
-                'Time spec value "{}" does not match format (Mon-Fri 06:30-20:30 Europe/Berlin)'.format(spec))
+                f'Time spec value "{spec}" does not match format (Mon-Fri 06:30-20:30 Europe/Berlin)')
         day_from = WEEKDAYS.index(match.group(1).upper())
         day_to = WEEKDAYS.index(match.group(2).upper())
         day_matches = day_from <= time.weekday() <= day_to

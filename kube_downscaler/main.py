@@ -18,7 +18,7 @@ from pykube.objects import NamespacedAPIObject
 
 WEEKDAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']
 
-TIME_SPEC_PATTERN = re.compile(r'^([a-zA-Z]{3})-([a-zA-Z]{3}) (\d\d):(\d\d)-(\d\d):(\d\d) (?P<tz>[a-zA-Z/]+)$')
+TIME_SPEC_PATTERN = re.compile(r'^([a-zA-Z]{3})-([a-zA-Z]{3}) (\d\d):(\d\d)-(\d\d):(\d\d) (?P<tz>[a-zA-Z/_]+)$')
 
 ORIGINAL_REPLICAS_ANNOTATION = 'downscaler/original-replicas'
 

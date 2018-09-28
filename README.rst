@@ -31,7 +31,7 @@ Example use cases:
   This might be useful for internal tooling frontends which are only needed during work time.
 
 You need to combine the downscaler with an elastic cluster autoscaler to actually **save cloud costs**.
-The `kube-aws-autoscaler <https://github.com/hjacobs/kube-aws-autoscaler>`_ was tested to work fine with the downscaler.
+The `official cluster autoscaler <https://github.com/kubernetes/autoscaler/tree/master/cluster-autoscaler>`_ and the `kube-aws-autoscaler <https://github.com/hjacobs/kube-aws-autoscaler>`_ were tested to work fine with the downscaler.
 
 Usage
 =====

@@ -1,0 +1,57 @@
+# a kuberentes deployment
+# https://kubernetes.io/docs/concepts/workloads/controllers/deployment/
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    downscaler/uptime: "Mon-Fri 07:00-19:00 US/Eastern"
+  name: flask-v1-tutorial
+  labels:
+    app: flask-v1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      # this is how a service determines what deployment to expose.
+      # this should match the selector for a service
+      app: flask-v1-tutorial
+  template:
+    metadata:
+      labels:
+        app: flask-v1-tutorial
+    spec:
+      containers:
+      - name: flask-v1-tutorial
+        # format of images - `repository/image-name:version`
+        image: jhinds/flask-tutorial:0.0.0
+        # it will always try to pull the latest image
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 8080
+
+
+---
+# kuberentes service
+# https://kubernetes.io/docs/concepts/services-networking/service/
+#
+# If you want to talk to this service then you'll need this
+kind: Service
+apiVersion: v1
+metadata:
+  name: flask-v1-tutorial
+  namespace: default
+spec:
+  # this determines how to access the service.
+  # a NodePort fixes a static port on the host machine
+  # we should only use NodePort for minikube development
+  # and should not be used when deployed to a live server.
+  type: NodePort
+  selector:
+    # this determines what deployment the service will expose.
+    # this should match the deployment you would like to expose.
+    app: flask-v1-tutorial
+  ports:
+  - name: flask-v1
+    protocol: TCP
+    port: 8080
+    targetPort: 8080

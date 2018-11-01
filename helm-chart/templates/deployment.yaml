@@ -3,10 +3,6 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ template "kube-downscaler.fullname" . }}
-  annotations:
-    # For secrets
-    sumologic.com/sourceCategory: {{ template "kube-downscaler.name" . }}
-    sumologic.com/sourceName: {{ template "kube-downscaler.name" . }}
   labels:
     type: deployment
     app: {{ template "kube-downscaler.fullname" . }}
@@ -40,8 +36,3 @@ spec:
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         resources:
 {{ toYaml .Values.resources | indent 12 }}
-        env:
-        - name: STATSD_HOST
-          valueFrom:
-            fieldRef:
-                fieldPath: status.hostIP

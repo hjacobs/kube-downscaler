@@ -21,3 +21,7 @@ def test_time_spec():
     assert not matches_time_spec(dt, 'Mon-Fri 08:00-18:00 UTC')
 
     assert matches_time_spec(dt, 'Mon-Fri 08:00-18:00 UTC, Sun-Sun 15:30-16:00 UTC')
+
+    dt = datetime(2018, 11, 4, 20, 30, 00)
+    assert matches_time_spec(dt, 'Mon-Fri 09:00-10:00 Pacific/Auckland')
+    assert not matches_time_spec(dt, 'Sat-Sun 09:00-10:00 Pacific/Auckland')

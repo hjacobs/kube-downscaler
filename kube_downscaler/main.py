@@ -56,11 +56,11 @@ def matches_time_spec(time: datetime.datetime, spec: str):
         if not match:
             raise ValueError(
                 f'Time spec value "{spec}" does not match format (Mon-Fri 06:30-20:30 Europe/Berlin)')
-        day_from = WEEKDAYS.index(match.group(1).upper())
-        day_to = WEEKDAYS.index(match.group(2).upper())
-        day_matches = day_from <= time.weekday() <= day_to
         tz = pytz.timezone(match.group('tz'))
         local_time = tz.fromutc(time.replace(tzinfo=tz))
+        day_from = WEEKDAYS.index(match.group(1).upper())
+        day_to = WEEKDAYS.index(match.group(2).upper())
+        day_matches = day_from <= local_time.weekday() <= day_to
         local_time_minutes = local_time.hour * 60 + local_time.minute
         minute_from = int(match.group(3)) * 60 + int(match.group(4))
         minute_to = int(match.group(5)) * 60 + int(match.group(6))

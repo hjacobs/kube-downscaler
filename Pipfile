@@ -1,0 +1,17 @@
+[[source]]
+url = "https://pypi.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+pykube = "*"
+pytz = "*"
+
+[dev-packages]
+flake8 = "*"
+pytest-cov = "*"
+pytest = "*"
+coveralls = "*"
+
+[requires]
+python_version = "3.7"

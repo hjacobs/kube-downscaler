@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
-from kube_downscaler.main import Deployment, within_grace_period
+from kube_downscaler.resources.deployment import Deployment
+from kube_downscaler.scaler import within_grace_period
 
 
 def test_within_grace_period():

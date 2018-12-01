@@ -1,9 +1,12 @@
+dist: xenial
+sudo: yes
 language: python
 python:
-  - "3.6"
+  - "3.7"
 install:
-  - pip install tox coveralls
+  - pip install pipenv
+  - pipenv install --dev
 script:
-  - tox
+  - pipenv run coverage run --source=kube_downscaler -m py.test
 after_success:
   - coveralls

@@ -1,7 +1,7 @@
 import pytest
 
 from datetime import datetime
-from kube_downscaler.main import matches_time_spec
+from kube_downscaler.helper import matches_time_spec
 
 
 def test_invalid_time_spec():

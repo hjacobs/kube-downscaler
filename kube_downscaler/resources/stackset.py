@@ -5,7 +5,7 @@ from .scalable import Scalable
 
 class StackSet(NamespacedAPIObject, Scalable):
     """
-    Use latest workloads API version (apps/v1), pykube is stuck with old version
+    Support the StackSet resource (https://github.com/zalando-incubator/stackset-controller)
     """
 
     version = "zalando.org/v1"

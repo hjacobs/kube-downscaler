@@ -3,10 +3,12 @@ sudo: yes
 language: python
 python:
   - "3.7"
+services:
+  - docker
 install:
   - pip install pipenv
   - pipenv install --dev
 script:
-  - pipenv run coverage run --source=kube_downscaler -m py.test
+  - make test docker
 after_success:
   - coveralls

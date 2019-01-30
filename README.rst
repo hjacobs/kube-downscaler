@@ -23,8 +23,8 @@ It will scale the deployment's replicas to zero if all of the following conditio
     * ``downscaler/uptime`` annotation on th deployment/stateful set's namespace
     * ``--default-uptime`` cli argument
     * ``--default-downtime`` cli argument
-    * ``DEFAULT_UPTIME``environment variable
-    * ``DEFAULT_DOWNTIME``environment variable
+    * ``DEFAULT_UPTIME`` environment variable
+    * ``DEFAULT_DOWNTIME`` environment variable
 * the deployment's namespace is not part of the exclusion list (``kube-system`` is excluded by default)
 * the deployment's name is not part of the exclusion list
 * the deployment is not marked for exclusion (annotation ``downscaler/exclude: "true"``)

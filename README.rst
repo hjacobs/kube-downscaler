@@ -104,7 +104,7 @@ Available command line options:
 Namespace Defaults
 ==================
 
-``DEFAULT_UPTIME``, ``DEFAULT_DOWNTIME`` and ``FORCE_UPTIME`` can also be configured using Namespace annotations. Where configured these values supersede the other global default values.
+``DEFAULT_UPTIME``, ``DEFAULT_DOWNTIME``, ``FORCE_UPTIME`` and exclusion can also be configured using Namespace annotations. Where configured these values supersede the other global default values.
 
 .. code-block:: yaml
 
@@ -117,7 +117,11 @@ Namespace Defaults
         annotations:
             downscaler/uptime: Mon-Sun 06:00-21:00 Europe/Berlin
 
-Following annotations are supported on the Namespace level: ``downscaler/uptime``, ``downscaler/downtime`` and ``downscaler/force-uptime``
+Following annotations are supported on the Namespace level: 
+* ``downscaler/uptime``
+* ``downscaler/downtime``
+* ``downscaler/force-uptime``
+* ``downscaler/exclude``
 
 Contributing
 ============

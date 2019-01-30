@@ -96,6 +96,11 @@ def autoscale_resources(api, kind, namespace: str,
 
         # Override defaults with (optional) annotations from Namespace
         namespace_obj = pykube.Namespace.objects(api).get_by_name(namespace)
+
+        if namespace_obj.annotations.get(EXCLUDE_ANNOTATION, 'false').lower() != 'false':
+            logger.debug('Namespace %s was excluded (because of namespace annotation)', namespace)
+            continue
+
         default_uptime = namespace_obj.annotations.get(UPTIME_ANNOTATION, default_uptime)
         default_downtime = namespace_obj.annotations.get(DOWNTIME_ANNOTATION, default_downtime)
         forced_uptime = namespace_obj.annotations.get(FORCE_UPTIME_ANNOTATION, forced_uptime)

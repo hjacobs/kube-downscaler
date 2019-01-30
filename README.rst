@@ -16,7 +16,15 @@ Deployments are interchangeable by statefulset for this whole guide.
 
 It will scale the deployment's replicas to zero if all of the following conditions are met:
 
-* current time is not part of the "uptime" schedule (annotation ``downscaler/uptime``) or current time is part of the "downtime" schedule (``downscaler/downtime``)
+* current time is not part of the "uptime" schedule or current time is part of the "downtime" schedule. The schedules are being evaluated in following order: 
+    * ``downscaler/downtime`` annotation on the deployment/stateful set
+    * ``downscaler/uptime`` annotation on the deployment/stateful sett
+    * ``downscaler/downtime`` annotation on the deployment/stateful set's namespace
+    * ``downscaler/uptime`` annotation on th deployment/stateful set's namespace
+    * ``--default-uptime`` cli argument
+    * ``--default-downtime`` cli argument
+    * ``DEFAULT_UPTIME``environment variable
+    * ``DEFAULT_DOWNTIME``environment variable
 * the deployment's namespace is not part of the exclusion list (``kube-system`` is excluded by default)
 * the deployment's name is not part of the exclusion list
 * the deployment is not marked for exclusion (annotation ``downscaler/exclude: "true"``)
@@ -93,6 +101,23 @@ Available command line options:
 ``--exclude-statefulsets``
     Exclude specific statefulsets from statefulsets, can also be configured via environment variable ``EXCLUDE_STATEFULSETS``
 
+Namespace Defaults
+==================
+
+``DEFAULT_UPTIME``, ``DEFAULT_DOWNTIME`` and ``FORCE_UPTIME`` can also be configured using Namespace annotations. Where configured these values supersede the other global default values.
+
+.. code-block:: yaml
+
+    apiVersion: v1
+    kind: Namespace
+    metadata:
+        name: foo
+        labels:
+            name: foo
+        annotations:
+            downscaler/uptime: Mon-Sun 06:00-21:00 Europe/Berlin
+
+Following annotations are supported on the Namespace level: ``downscaler/uptime``, ``downscaler/downtime`` and ``downscaler/force-uptime``
 
 Contributing
 ============

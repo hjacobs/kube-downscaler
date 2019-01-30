@@ -12,6 +12,8 @@ logger = logging.getLogger(__name__)
 ORIGINAL_REPLICAS_ANNOTATION = 'downscaler/original-replicas'
 FORCE_UPTIME_ANNOTATION = 'downscaler/force-uptime'
 EXCLUDE_ANNOTATION = 'downscaler/exclude'
+UPTIME_ANNOTATION = 'downscaler/uptime'
+DOWNTIME_ANNOTATION = 'downscaler/downtime'
 
 
 def within_grace_period(deploy, grace_period: int):
@@ -48,8 +50,8 @@ def autoscale_resource(resource: pykube.objects.NamespacedAPIObject,
                 downtime = "ignored"
                 is_uptime = True
             else:
-                uptime = resource.annotations.get('downscaler/uptime', default_uptime)
-                downtime = resource.annotations.get('downscaler/downtime', default_downtime)
+                uptime = resource.annotations.get(UPTIME_ANNOTATION, default_uptime)
+                downtime = resource.annotations.get(DOWNTIME_ANNOTATION, default_downtime)
                 is_uptime = helper.matches_time_spec(now, uptime) and not helper.matches_time_spec(now, downtime)
 
             original_replicas = resource.annotations.get(ORIGINAL_REPLICAS_ANNOTATION)
@@ -91,6 +93,13 @@ def autoscale_resources(api, kind, namespace: str,
     for resource in kind.objects(api, namespace=(namespace or pykube.all)):
         if resource.namespace in exclude_namespaces or resource.name in exclude_names:
             continue
+
+        # Override defaults with (optional) annotations from Namespace
+        namespace_obj = pykube.Namespace.objects(api).get_by_name(namespace)
+        default_uptime = namespace_obj.annotations.get(UPTIME_ANNOTATION, default_uptime)
+        default_downtime = namespace_obj.annotations.get(DOWNTIME_ANNOTATION, default_downtime)
+        forced_uptime = namespace_obj.annotations.get(FORCE_UPTIME_ANNOTATION, forced_uptime)
+
         autoscale_resource(resource, default_uptime, default_downtime, forced_uptime, dry_run, now, grace_period)
 
 

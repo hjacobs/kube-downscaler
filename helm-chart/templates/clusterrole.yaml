@@ -29,4 +29,10 @@ rules:
   - list
   - update
   - patch
+- apiGroups:
+  - ""
+  resources:
+  - namespaces
+  verbs:
+  - get
 {{- end -}}

@@ -18,7 +18,7 @@ It will scale the deployment's replicas to zero if all of the following conditio
 
 * current time is not part of the "uptime" schedule or current time is part of the "downtime" schedule. The schedules are being evaluated in following order: 
     * ``downscaler/downtime`` annotation on the deployment/stateful set
-    * ``downscaler/uptime`` annotation on the deployment/stateful sett
+    * ``downscaler/uptime`` annotation on the deployment/stateful set
     * ``downscaler/downtime`` annotation on the deployment/stateful set's namespace
     * ``downscaler/uptime`` annotation on th deployment/stateful set's namespace
     * ``--default-uptime`` cli argument

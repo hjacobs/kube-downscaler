@@ -40,6 +40,6 @@ def get_kube_api():
         config = pykube.KubeConfig.from_service_account()
     except FileNotFoundError:
         # local testing
-        config = pykube.KubeConfig.from_file((('KUBECONFIG' in os.environ) and os.environ['KUBECONFIG']) or os.path.expanduser('~/.kube/config'))
+        config = pykube.KubeConfig.from_file(os.getenv('KUBECONFIG', os.path.expanduser('~/.kube/config')))
     api = pykube.HTTPClient(config)
     return api

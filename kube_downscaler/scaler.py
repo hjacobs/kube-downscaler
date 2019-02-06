@@ -101,11 +101,11 @@ def autoscale_resources(api, kind, namespace: str,
             logger.debug('Namespace %s was excluded (because of namespace annotation)', namespace)
             continue
 
-        default_uptime = namespace_obj.annotations.get(UPTIME_ANNOTATION, default_uptime)
-        default_downtime = namespace_obj.annotations.get(DOWNTIME_ANNOTATION, default_downtime)
-        forced_uptime = namespace_obj.annotations.get(FORCE_UPTIME_ANNOTATION, forced_uptime)
+        default_uptime_for_namespace = namespace_obj.annotations.get(UPTIME_ANNOTATION, default_uptime)
+        default_downtime_for_namespace = namespace_obj.annotations.get(DOWNTIME_ANNOTATION, default_downtime)
+        forced_uptime_for_namespace = namespace_obj.annotations.get(FORCE_UPTIME_ANNOTATION, forced_uptime)
 
-        autoscale_resource(resource, default_uptime, default_downtime, forced_uptime, dry_run, now, grace_period)
+        autoscale_resource(resource, default_uptime_for_namespace, default_downtime_for_namespace, forced_uptime_for_namespace, dry_run, now, grace_period)
 
 
 def scale(namespace: str, default_uptime: str, default_downtime: str, kinds: FrozenSet[str],

@@ -10,6 +10,10 @@ Kubernetes Downscaler
    :target: https://coveralls.io/github/hjacobs/kube-downscaler?branch=master
    :alt: Code Coverage
 
+.. image:: 	https://img.shields.io/docker/pulls/hjacobs/kube-downscaler.svg
+   :target: https://hub.docker.com/r/hjacobs/kube-downscaler
+   :alt: Docker pulls
+
 Scale down Kubernetes deployments and/or statefulsets during non-work hours.
 
 Deployments are interchangeable by statefulset for this whole guide.

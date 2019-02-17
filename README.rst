@@ -16,7 +16,7 @@ Deployments are interchangeable by statefulset for this whole guide.
 
 It will scale the deployment's replicas to zero if all of the following conditions are met:
 
-* current time is not part of the "uptime" schedule or current time is part of the "downtime" schedule. The schedules are being evaluated in following order: 
+* current time is not part of the "uptime" schedule or current time is part of the "downtime" schedule. The schedules are being evaluated in following order:
     * ``downscaler/downtime`` annotation on the deployment/stateful set
     * ``downscaler/uptime`` annotation on the deployment/stateful set
     * ``downscaler/downtime`` annotation on the deployment/stateful set's namespace
@@ -115,9 +115,10 @@ Namespace Defaults
         labels:
             name: foo
         annotations:
-            downscaler/uptime: Mon-Sun 06:00-21:00 Europe/Berlin
+            downscaler/uptime: Mon-Sun 07:30-18:00 CET
 
-Following annotations are supported on the Namespace level: 
+The following annotations are supported on the Namespace level:
+
 * ``downscaler/uptime``
 * ``downscaler/downtime``
 * ``downscaler/force-uptime``

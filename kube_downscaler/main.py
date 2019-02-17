@@ -4,7 +4,7 @@ import time
 
 import logging
 
-from kube_downscaler import cmd, shutdown
+from kube_downscaler import __version__, cmd, shutdown
 from kube_downscaler.scaler import scale
 
 logger = logging.getLogger('downscaler')
@@ -17,7 +17,7 @@ def main():
     logging.basicConfig(format='%(asctime)s %(levelname)s: %(message)s',
                         level=logging.DEBUG if args.debug else logging.INFO)
 
-    logger.info('Downscaler started with config: %s', args)
+    logger.info(f'Downscaler v{__version__} started with config {args}')
 
     if args.dry_run:
         logger.info('**DRY-RUN**: no downscaling will be performed!')

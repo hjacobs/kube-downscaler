@@ -1,4 +1,4 @@
-FROM python:3.7-alpine3.8
+FROM python:3.7-alpine3.9
 MAINTAINER Henning Jacobs <henning@jacobs1.de>
 
 WORKDIR /
@@ -10,7 +10,7 @@ RUN /pipenv-install.py && \
     rm -fr /usr/local/lib/python3.7/site-packages/pip && \
     rm -fr /usr/local/lib/python3.7/site-packages/setuptools
 
-FROM python:3.7-alpine3.8
+FROM python:3.7-alpine3.9
 
 WORKDIR /
 

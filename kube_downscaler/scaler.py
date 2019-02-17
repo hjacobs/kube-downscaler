@@ -12,6 +12,8 @@ logger = logging.getLogger(__name__)
 ORIGINAL_REPLICAS_ANNOTATION = 'downscaler/original-replicas'
 FORCE_UPTIME_ANNOTATION = 'downscaler/force-uptime'
 EXCLUDE_ANNOTATION = 'downscaler/exclude'
+UPTIME_ANNOTATION = 'downscaler/uptime'
+DOWNTIME_ANNOTATION = 'downscaler/downtime'
 
 
 def within_grace_period(deploy, grace_period: int):
@@ -48,8 +50,8 @@ def autoscale_resource(resource: pykube.objects.NamespacedAPIObject,
                 downtime = "ignored"
                 is_uptime = True
             else:
-                uptime = resource.annotations.get('downscaler/uptime', default_uptime)
-                downtime = resource.annotations.get('downscaler/downtime', default_downtime)
+                uptime = resource.annotations.get(UPTIME_ANNOTATION, default_uptime)
+                downtime = resource.annotations.get(DOWNTIME_ANNOTATION, default_downtime)
                 is_uptime = helper.matches_time_spec(now, uptime) and not helper.matches_time_spec(now, downtime)
 
             original_replicas = resource.annotations.get(ORIGINAL_REPLICAS_ANNOTATION)
@@ -91,7 +93,19 @@ def autoscale_resources(api, kind, namespace: str,
     for resource in kind.objects(api, namespace=(namespace or pykube.all)):
         if resource.namespace in exclude_namespaces or resource.name in exclude_names:
             continue
-        autoscale_resource(resource, default_uptime, default_downtime, forced_uptime, dry_run, now, grace_period)
+
+        # Override defaults with (optional) annotations from Namespace
+        namespace_obj = pykube.Namespace.objects(api).get_by_name(resource.namespace)
+
+        if namespace_obj.annotations.get(EXCLUDE_ANNOTATION, 'false').lower() != 'false':
+            logger.debug('Namespace %s was excluded (because of namespace annotation)', namespace)
+            continue
+
+        default_uptime_for_namespace = namespace_obj.annotations.get(UPTIME_ANNOTATION, default_uptime)
+        default_downtime_for_namespace = namespace_obj.annotations.get(DOWNTIME_ANNOTATION, default_downtime)
+        forced_uptime_for_namespace = namespace_obj.annotations.get(FORCE_UPTIME_ANNOTATION, forced_uptime)
+
+        autoscale_resource(resource, default_uptime_for_namespace, default_downtime_for_namespace, forced_uptime_for_namespace, dry_run, now, grace_period)
 
 
 def scale(namespace: str, default_uptime: str, default_downtime: str, kinds: FrozenSet[str],

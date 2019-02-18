@@ -12,6 +12,7 @@ rules:
   - ""
   resources:
   - pods
+  - namespaces
   verbs:
   - get
   - watch

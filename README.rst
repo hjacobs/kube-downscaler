@@ -94,6 +94,8 @@ Available command line options:
     Namespace (default: all namespaces)
 ``--kind``
     Downscale resources of this kind (default: deployment)
+``--grace-period``
+    Grace period in seconds for new deployments before scaling them down (default: 15min). The grace period counts from time of creation of the deployment, i.e. updated deployments will immediately be scaled down regardless of the grace period.
 ``--default-uptime``
     Default time range to scale up for (default: always), can also be configured via environment variable ``DEFAULT_UPTIME`` or via the annotation ``downscaler/uptime`` on each deployment
 ``--default-downtime``

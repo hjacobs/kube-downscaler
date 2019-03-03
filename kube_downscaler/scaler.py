@@ -4,8 +4,7 @@ import pykube
 from typing import FrozenSet
 
 from kube_downscaler import helper
-from kube_downscaler.resources.deployment import Deployment
-from kube_downscaler.resources.statefulset import StatefulSet
+from pykube import Deployment, StatefulSet
 from kube_downscaler.resources.stackset import StackSet
 
 logger = logging.getLogger(__name__)
@@ -43,7 +42,7 @@ def autoscale_resource(resource: pykube.objects.NamespacedAPIObject,
         if exclude:
             logger.debug('%s %s/%s was excluded', resource.kind, resource.namespace, resource.name)
         else:
-            replicas = resource.get_replicas()
+            replicas = resource.replicas
 
             if forced_uptime:
                 uptime = "forced"
@@ -62,7 +61,7 @@ def autoscale_resource(resource: pykube.objects.NamespacedAPIObject,
                 logger.info('Scaling up %s %s/%s from %s to %s replicas (uptime: %s, downtime: %s)',
                             resource.kind, resource.namespace, resource.name, replicas, original_replicas,
                             uptime, downtime)
-                resource.set_replicas(int(original_replicas))
+                resource.replicas = int(original_replicas)
                 resource.annotations[ORIGINAL_REPLICAS_ANNOTATION] = None
                 update_needed = True
             elif not is_uptime and replicas > 0:
@@ -75,7 +74,7 @@ def autoscale_resource(resource: pykube.objects.NamespacedAPIObject,
                                 resource.kind, resource.namespace, resource.name, replicas, target_replicas,
                                 uptime, downtime)
                     resource.annotations[ORIGINAL_REPLICAS_ANNOTATION] = str(replicas)
-                    resource.set_replicas(target_replicas)
+                    resource.replicas = target_replicas
                     update_needed = True
             if update_needed:
                 if dry_run:

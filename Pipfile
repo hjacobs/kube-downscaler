@@ -4,7 +4,7 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-pykube = "*"
+pykube-ng = "*"
 pytz = "*"
 
 [dev-packages]
@@ -12,6 +12,7 @@ flake8 = "*"
 pytest-cov = "*"
 pytest = "*"
 coveralls = "*"
+coverage = "*"
 
 [requires]
 python_version = "3.7"

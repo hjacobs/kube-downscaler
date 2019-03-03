@@ -1,9 +1,7 @@
 from pykube.objects import NamespacedAPIObject
 
-from .scalable import Scalable
 
-
-class StackSet(NamespacedAPIObject, Scalable):
+class StackSet(NamespacedAPIObject):
     """
     Support the StackSet resource (https://github.com/zalando-incubator/stackset-controller)
     """
@@ -12,8 +10,10 @@ class StackSet(NamespacedAPIObject, Scalable):
     endpoint = "stacksets"
     kind = "StackSet"
 
-    def set_replicas(self, count):
-        self.obj['spec']['stackTemplate']['spec']['replicas'] = count
-
-    def get_replicas(self):
+    @property
+    def replicas(self):
         return int(self.obj['spec']['stackTemplate']['spec']['replicas'])
+
+    @replicas.setter
+    def replicas(self, count):
+        self.obj['spec']['stackTemplate']['spec']['replicas'] = count

@@ -64,7 +64,7 @@ def test_scaler_namespace_excluded(monkeypatch):
 
     assert api.patch.call_count == 1
 
-    # make sure that deploy-2 was updated (namespace of deploy-1 was excluded)
+    # make sure that deploy-2 was updated (namespace of sysdep-1 was excluded)
     patch_data = {"metadata": {"name": "deploy-2", "namespace": "default", "creationTimestamp": "2019-03-01T16:38:00Z"}, "spec": {"replicas": 0}}
     assert api.patch.call_args[1]['url'] == 'deployments/deploy-2'
     assert json.loads(api.patch.call_args[1]['data']) == patch_data

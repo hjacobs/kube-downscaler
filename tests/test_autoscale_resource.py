@@ -1,4 +1,5 @@
 import pytest
+import logging
 
 from datetime import datetime
 from unittest.mock import MagicMock
@@ -9,7 +10,26 @@ from kube_downscaler.scaler import autoscale_resource, EXCLUDE_ANNOTATION, ORIGI
 @pytest.fixture
 def resource():
     res = MagicMock()
+    res.kind = 'MockResource'
+    res.namespace = 'mock'
+    res.name = 'res-1'
     return res
+
+
+def test_swallow_exception(resource, caplog):
+    caplog.set_level(logging.ERROR)
+    resource.annotations = {}
+    resource.replicas = 1
+    now = datetime.strptime('2018-10-23T21:56:00Z', '%Y-%m-%dT%H:%M:%SZ')
+    resource.metadata = {'creationTimestamp': 'invalid-timestamp!'}
+    autoscale_resource(resource, 'never', 'always', False, False, now, 0)
+    assert resource.replicas == 1
+    resource.update.assert_not_called()
+    # check that the failure was logged
+    msg = "Failed to process MockResource mock/res-1 : time data 'invalid-timestamp!' does not match format '%Y-%m-%dT%H:%M:%SZ'"
+    assert caplog.record_tuples == [
+        ('kube_downscaler.scaler', logging.ERROR, msg)
+    ]
 
 
 def test_exclude(resource):

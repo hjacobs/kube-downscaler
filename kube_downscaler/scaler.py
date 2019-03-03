@@ -15,9 +15,8 @@ UPTIME_ANNOTATION = 'downscaler/uptime'
 DOWNTIME_ANNOTATION = 'downscaler/downtime'
 
 
-def within_grace_period(deploy, grace_period: int):
+def within_grace_period(deploy, grace_period: int, now: datetime.datetime):
     creation_time = datetime.datetime.strptime(deploy.metadata['creationTimestamp'], '%Y-%m-%dT%H:%M:%SZ')
-    now = datetime.datetime.utcnow()
     delta = now - creation_time
     return delta.total_seconds() <= grace_period
 
@@ -65,7 +64,7 @@ def autoscale_resource(resource: pykube.objects.NamespacedAPIObject,
                 resource.annotations[ORIGINAL_REPLICAS_ANNOTATION] = None
                 update_needed = True
             elif not is_uptime and replicas > 0:
-                if within_grace_period(resource, grace_period):
+                if within_grace_period(resource, grace_period, now):
                     logger.info('%s %s/%s within grace period (%ds), not scaling down (yet)',
                                 resource.kind, resource.namespace, resource.name, grace_period)
                 else:

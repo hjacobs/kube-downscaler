@@ -12,6 +12,41 @@ def resource():
     return res
 
 
+def test_exclude(resource):
+    resource.annotations = {EXCLUDE_ANNOTATION: 'true'}
+    resource.replicas = 1
+    now = datetime.strptime('2018-10-23T21:56:00Z', '%Y-%m-%dT%H:%M:%SZ')
+    resource.metadata = {'creationTimestamp': '2018-10-23T21:55:00Z'}
+    autoscale_resource(resource, 'never', 'always', False, False, now, 0)
+    assert resource.replicas == 1
+    resource.update.assert_not_called()
+    assert ORIGINAL_REPLICAS_ANNOTATION not in resource.annotations
+
+
+def test_dry_run(resource):
+    resource.annotations = {}
+    resource.replicas = 1
+    now = datetime.strptime('2018-10-23T21:56:00Z', '%Y-%m-%dT%H:%M:%SZ')
+    resource.metadata = {'creationTimestamp': '2018-10-23T21:55:00Z'}
+    autoscale_resource(resource, 'never', 'always', False, dry_run=True, now=now, grace_period=0)
+    assert resource.replicas == 0
+    assert resource.annotations[ORIGINAL_REPLICAS_ANNOTATION] == '1'
+    # dry run will update the object properties, but won't call the Kubernetes API (update)
+    resource.update.assert_not_called()
+
+
+def test_grace_period(resource):
+    resource.annotations = {}
+    resource.replicas = 1
+    now = datetime.strptime('2018-10-23T21:56:00Z', '%Y-%m-%dT%H:%M:%SZ')
+    resource.metadata = {'creationTimestamp': '2018-10-23T21:55:00Z'}
+    # resource was only created 1 minute ago, grace period is 5 minutes
+    autoscale_resource(resource, 'never', 'always', False, dry_run=False, now=now, grace_period=300)
+    assert resource.replicas == 1
+    assert resource.annotations == {}
+    resource.update.assert_not_called()
+
+
 def test_downtime_always(resource):
     resource.annotations = {EXCLUDE_ANNOTATION: 'false'}
     resource.replicas = 1

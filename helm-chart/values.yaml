@@ -25,6 +25,8 @@ image:
   repository: hjacobs/kube-downscaler
   tag: 0.5.1
   pullPolicy: IfNotPresent
+  args: []
+    # --default-uptime="Mon-Fri 07:30-20:30 Europe/Berlin"
 resources:
   limits:
     cpu: 50m

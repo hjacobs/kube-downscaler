@@ -33,6 +33,7 @@ spec:
         {{- end }}
         {{- end }}
         {{ if .Values.debug.enable }}- --debug{{end }}
+{{ toYaml .Values.image.args | indent 8 }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         resources:
 {{ toYaml .Values.resources | indent 12 }}

@@ -18,7 +18,7 @@ Scale down Kubernetes deployments and/or statefulsets during non-work hours.
 
 Deployments are interchangeable by statefulset for this whole guide.
 
-It will scale the deployment's replicas to zero if all of the following conditions are met:
+It will scale down the deployment's replicas if all of the following conditions are met:
 
 * current time is not part of the "uptime" schedule or current time is part of the "downtime" schedule. The schedules are being evaluated in following order:
     * ``downscaler/downtime`` annotation on the deployment/stateful set
@@ -34,7 +34,7 @@ It will scale the deployment's replicas to zero if all of the following conditio
 * the deployment is not marked for exclusion (annotation ``downscaler/exclude: "true"``)
 * there are no active pods that force the whole cluster into uptime (annotation ``downscaler/force-uptime: "true"``)
 
-
+The deployment by default will be scaled down to zero replicas. This can be configured with a deployment annotation of ``downscaler/downtime-replicas``. (eg: ``downscaler/downtime-replicas: "1"``)
 
 Example use cases:
 

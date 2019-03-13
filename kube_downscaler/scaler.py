@@ -35,7 +35,7 @@ def pods_force_uptime(api, namespace: str):
 
 def autoscale_resource(resource: pykube.objects.NamespacedAPIObject,
                        default_uptime: str, default_downtime: str, forced_uptime: bool, dry_run: bool,
-                       now: datetime.datetime, grace_period: int):
+                       now: datetime.datetime, grace_period: int, downtime_replicas: int):
     try:
         # any value different from "false" will ignore the resource (to be on the safe side)
         exclude = resource.annotations.get(EXCLUDE_ANNOTATION, 'false').lower() != 'false'
@@ -65,11 +65,12 @@ def autoscale_resource(resource: pykube.objects.NamespacedAPIObject,
                 resource.annotations[ORIGINAL_REPLICAS_ANNOTATION] = None
                 update_needed = True
             elif not is_uptime and replicas > 0:
+                target_replicas = int(resource.annotations.get(DOWNTIME_REPLICAS_ANNOTATION, downtime_replicas))
                 if within_grace_period(resource, grace_period, now):
                     logger.info('%s %s/%s within grace period (%ds), not scaling down (yet)',
                                 resource.kind, resource.namespace, resource.name, grace_period)
                 else:
-                    target_replicas = int(resource.annotations.get(DOWNTIME_REPLICAS_ANNOTATION, 0))
+
                     logger.info('Scaling down %s %s/%s from %s to %s replicas (uptime: %s, downtime: %s)',
                                 resource.kind, resource.namespace, resource.name, replicas, target_replicas,
                                 uptime, downtime)

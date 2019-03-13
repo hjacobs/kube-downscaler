@@ -25,7 +25,7 @@ def main(args=None):
 
     return run_loop(args.once, args.namespace, args.kind, args.default_uptime, args.default_downtime,
                     args.exclude_namespaces, args.exclude_deployments, args.exclude_statefulsets, args.grace_period,
-                    args.interval, args.dry_run)
+                    args.interval, args.dry_run, args.downtime_replicas)
 
 
 def run_loop(run_once, namespace, kinds, default_uptime, default_downtime, exclude_namespaces, exclude_deployments,

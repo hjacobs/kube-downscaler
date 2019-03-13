@@ -34,7 +34,7 @@ It will scale down the deployment's replicas if all of the following conditions 
 * the deployment is not marked for exclusion (annotation ``downscaler/exclude: "true"``)
 * there are no active pods that force the whole cluster into uptime (annotation ``downscaler/force-uptime: "true"``)
 
-The deployment by default will be scaled down to zero replicas. This can be configured with a deployment annotation of ``downscaler/downtime-replicas``. (eg: ``downscaler/downtime-replicas: "1"``)
+The deployment by default will be scaled down to zero replicas. This can be configured with a deployment annotation of ``downscaler/downtime-replicas`` (eg: ``downscaler/downtime-replicas: "1"``) or via cli with ``--downtime-replicas``.
 
 Example use cases:
 
@@ -106,6 +106,7 @@ Available command line options:
     Exclude specific deployments from downscaling (default: kube-downscaler, downscaler), can also be configured via environment variable ``EXCLUDE_DEPLOYMENTS``
 ``--exclude-statefulsets``
     Exclude specific statefulsets from statefulsets, can also be configured via environment variable ``EXCLUDE_STATEFULSETS``
+``--downtime-replicas``
 
 Namespace Defaults
 ==================

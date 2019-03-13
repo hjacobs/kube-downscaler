@@ -30,7 +30,7 @@ def test_scaler_always_up(monkeypatch):
 
     kinds = frozenset(['statefulset', 'deployment', 'stackset'])
     scale(namespace=None, default_uptime='always', default_downtime='never', kinds=kinds,
-          exclude_namespaces=[], exclude_deployments=[], exclude_statefulsets=[], dry_run=False, grace_period=300)
+          exclude_namespaces=[], exclude_deployments=[], exclude_statefulsets=[], dry_run=False, grace_period=300, downtime_replicas=0)
 
     api.patch.assert_not_called()
 
@@ -60,7 +60,7 @@ def test_scaler_namespace_excluded(monkeypatch):
 
     kinds = frozenset(['deployment'])
     scale(namespace=None, default_uptime='never', default_downtime='always', kinds=kinds,
-          exclude_namespaces=['system-ns'], exclude_deployments=[], exclude_statefulsets=[], dry_run=False, grace_period=300)
+          exclude_namespaces=['system-ns'], exclude_deployments=[], exclude_statefulsets=[], dry_run=False, grace_period=300, downtime_replicas=0)
 
     assert api.patch.call_count == 1
 
@@ -97,7 +97,7 @@ def test_scaler_namespace_excluded_via_annotation(monkeypatch):
 
     kinds = frozenset(['deployment'])
     scale(namespace=None, default_uptime='never', default_downtime='always', kinds=kinds,
-          exclude_namespaces=[], exclude_deployments=[], exclude_statefulsets=[], dry_run=False, grace_period=300)
+          exclude_namespaces=[], exclude_deployments=[], exclude_statefulsets=[], dry_run=False, grace_period=300, downtime_replicas=0)
 
     assert api.patch.call_count == 1
 
@@ -137,7 +137,7 @@ def test_scaler_down_to(monkeypatch):
 
     kinds = frozenset(['deployment'])
     scale(namespace=None, default_uptime='never', default_downtime='always', kinds=kinds,
-          exclude_namespaces=[], exclude_deployments=[], exclude_statefulsets=[], dry_run=False, grace_period=300)
+          exclude_namespaces=[], exclude_deployments=[], exclude_statefulsets=[], dry_run=False, grace_period=300, downtime_replicas=0)
 
     assert api.patch.call_count == 1
     assert api.patch.call_args[1]['url'] == 'deployments/deploy-1'

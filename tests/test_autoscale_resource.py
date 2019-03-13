@@ -22,7 +22,7 @@ def test_swallow_exception(resource, caplog):
     resource.replicas = 1
     now = datetime.strptime('2018-10-23T21:56:00Z', '%Y-%m-%dT%H:%M:%SZ')
     resource.metadata = {'creationTimestamp': 'invalid-timestamp!'}
-    autoscale_resource(resource, 'never', 'always', False, False, now, 0)
+    autoscale_resource(resource, 'never', 'always', False, False, now, 0, 0)
     assert resource.replicas == 1
     resource.update.assert_not_called()
     # check that the failure was logged
@@ -37,7 +37,7 @@ def test_exclude(resource):
     resource.replicas = 1
     now = datetime.strptime('2018-10-23T21:56:00Z', '%Y-%m-%dT%H:%M:%SZ')
     resource.metadata = {'creationTimestamp': '2018-10-23T21:55:00Z'}
-    autoscale_resource(resource, 'never', 'always', False, False, now, 0)
+    autoscale_resource(resource, 'never', 'always', False, False, now, 0, 0)
     assert resource.replicas == 1
     resource.update.assert_not_called()
     assert ORIGINAL_REPLICAS_ANNOTATION not in resource.annotations

@@ -69,7 +69,7 @@ def autoscale_resource(resource: pykube.objects.NamespacedAPIObject,
                     logger.info('%s %s/%s within grace period (%ds), not scaling down (yet)',
                                 resource.kind, resource.namespace, resource.name, grace_period)
                 else:
-                    target_replicas = resource.annotations.get(DOWNTIME_REPLICAS_ANNOTATION, 0)
+                    target_replicas = int(resource.annotations.get(DOWNTIME_REPLICAS_ANNOTATION, 0))
                     logger.info('Scaling down %s %s/%s from %s to %s replicas (uptime: %s, downtime: %s)',
                                 resource.kind, resource.namespace, resource.name, replicas, target_replicas,
                                 uptime, downtime)

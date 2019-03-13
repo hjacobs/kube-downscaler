@@ -105,7 +105,8 @@ def autoscale_resources(api, kind, namespace: str,
         default_downtime_for_namespace = namespace_obj.annotations.get(DOWNTIME_ANNOTATION, default_downtime)
         forced_uptime_for_namespace = namespace_obj.annotations.get(FORCE_UPTIME_ANNOTATION, forced_uptime)
 
-        autoscale_resource(resource, default_uptime_for_namespace, default_downtime_for_namespace, forced_uptime_for_namespace, dry_run, now, grace_period, downtime_replicas)
+        autoscale_resource(resource, default_uptime_for_namespace, default_downtime_for_namespace,
+                           forced_uptime_for_namespace, dry_run, now, grace_period, downtime_replicas)
 
 
 def scale(namespace: str, default_uptime: str, default_downtime: str, kinds: FrozenSet[str],

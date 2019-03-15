@@ -30,5 +30,5 @@ def get_parser():
                         default=os.getenv('EXCLUDE_STATEFULSETS', ''))
     parser.add_argument('--downtime-replicas', type=int,
                         help='Default amount of replicas when downscaling (default: 0)',
-                        default=os.getenv('DOWNTIME_REPLICAS', '0'))
+                        default=int(os.getenv('DOWNTIME_REPLICAS', 0)))
     return parser

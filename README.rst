@@ -34,7 +34,7 @@ It will scale down the deployment's replicas if all of the following conditions 
 * the deployment is not marked for exclusion (annotation ``downscaler/exclude: "true"``)
 * there are no active pods that force the whole cluster into uptime (annotation ``downscaler/force-uptime: "true"``)
 
-The deployment by default will be scaled down to zero replicas. This can be configured with a deployment annotation of ``downscaler/downtime-replicas`` (eg: ``downscaler/downtime-replicas: "1"``) or via cli with ``--downtime-replicas``.
+The deployment by default will be scaled down to zero replicas. This can be configured with a deployment annotation of ``downscaler/downtime-replicas`` (e.g. ``downscaler/downtime-replicas: "1"``) or via CLI with ``--downtime-replicas``.
 
 Example use cases:
 
@@ -107,6 +107,7 @@ Available command line options:
 ``--exclude-statefulsets``
     Exclude specific statefulsets from statefulsets, can also be configured via environment variable ``EXCLUDE_STATEFULSETS``
 ``--downtime-replicas``
+    Default value of replicas to downscale to, the annotation ``downscaler/downtime-replicas`` takes precedence over this value.
 
 Namespace Defaults
 ==================

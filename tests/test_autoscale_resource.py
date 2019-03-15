@@ -13,6 +13,7 @@ def resource():
     res.kind = 'MockResource'
     res.namespace = 'mock'
     res.name = 'res-1'
+    res.annotations = {}
     return res
 
 

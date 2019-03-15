@@ -28,4 +28,7 @@ def get_parser():
     parser.add_argument('--exclude-statefulsets',
                         help='Exclude specific statefulsets from downscaling',
                         default=os.getenv('EXCLUDE_STATEFULSETS', ''))
+    parser.add_argument('--downtime-replicas', type=int,
+                        help='Default amount of replicas when downscaling (default: 0)',
+                        default=os.getenv('DOWNTIME_REPLICAS', '0'))
     return parser

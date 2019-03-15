@@ -25,11 +25,11 @@ def main(args=None):
 
     return run_loop(args.once, args.namespace, args.kind, args.default_uptime, args.default_downtime,
                     args.exclude_namespaces, args.exclude_deployments, args.exclude_statefulsets, args.grace_period,
-                    args.interval, args.dry_run)
+                    args.interval, args.dry_run, args.downtime_replicas)
 
 
 def run_loop(run_once, namespace, kinds, default_uptime, default_downtime, exclude_namespaces, exclude_deployments,
-             exclude_statefulsets, grace_period, interval, dry_run):
+             exclude_statefulsets, grace_period, interval, dry_run, downtime_replicas):
     handler = shutdown.GracefulShutdown()
     while True:
         try:
@@ -38,7 +38,7 @@ def run_loop(run_once, namespace, kinds, default_uptime, default_downtime, exclu
                   exclude_namespaces=frozenset(exclude_namespaces.split(',')),
                   exclude_deployments=frozenset(exclude_deployments.split(',')),
                   exclude_statefulsets=frozenset(exclude_statefulsets.split(',')),
-                  dry_run=dry_run, grace_period=grace_period)
+                  dry_run=dry_run, grace_period=grace_period, downtime_replicas=downtime_replicas)
         except Exception as e:
             logger.exception('Failed to autoscale : %s', e)
         if run_once or handler.shutdown_now:

@@ -1,3 +1,5 @@
+import json
+import pykube
 import pytest
 import logging
 
@@ -147,3 +149,17 @@ def test_downtime_replicas_valid(resource):
     autoscale_resource(resource, 'never', 'always', False, False, now, 0, 1)
     assert resource.replicas == 1
     resource.update.assert_called_once()
+
+
+def test_set_annotation():
+    api = MagicMock()
+    api.config.namespace = 'myns'
+    resource = pykube.StatefulSet(api, {'metadata': {'name': 'foo', 'creationTimestamp': '2019-03-15T21:55:00Z'}, 'spec': {}})
+    resource.replicas = 1
+    now = datetime.strptime('2019-03-15T21:56:00Z', '%Y-%m-%dT%H:%M:%SZ')
+    autoscale_resource(resource, 'never', 'always', False, False, now, 0, 0)
+    api.patch.assert_called_once()
+    patch_data = json.loads(api.patch.call_args[1]['data'])
+    # ensure the original replicas annotation is send to the server
+    assert patch_data == {"metadata": {"name": "foo", "creationTimestamp": "2019-03-15T21:55:00Z",
+                          'annotations': {ORIGINAL_REPLICAS_ANNOTATION: '1'}}, "spec": {"replicas": 0}}

@@ -1,7 +1,7 @@
 import json
 from unittest.mock import MagicMock
 
-from kube_downscaler.scaler import scale
+from kube_downscaler.scaler import scale, ORIGINAL_REPLICAS_ANNOTATION
 
 
 def test_scaler_always_up(monkeypatch):
@@ -65,7 +65,8 @@ def test_scaler_namespace_excluded(monkeypatch):
     assert api.patch.call_count == 1
 
     # make sure that deploy-2 was updated (namespace of sysdep-1 was excluded)
-    patch_data = {"metadata": {"name": "deploy-2", "namespace": "default", "creationTimestamp": "2019-03-01T16:38:00Z"}, "spec": {"replicas": 0}}
+    patch_data = {"metadata": {"name": "deploy-2", "namespace": "default", "creationTimestamp": "2019-03-01T16:38:00Z",
+                  'annotations': {ORIGINAL_REPLICAS_ANNOTATION: '2'}}, "spec": {"replicas": 0}}
     assert api.patch.call_args[1]['url'] == 'deployments/deploy-2'
     assert json.loads(api.patch.call_args[1]['data']) == patch_data
 
@@ -102,7 +103,8 @@ def test_scaler_namespace_excluded_via_annotation(monkeypatch):
     assert api.patch.call_count == 1
 
     # make sure that deploy-2 was updated (deploy-1 was excluded via annotation on ns-1)
-    patch_data = {"metadata": {"name": "deploy-2", "namespace": "ns-2", "creationTimestamp": "2019-03-01T16:38:00Z"}, "spec": {"replicas": 0}}
+    patch_data = {"metadata": {"name": "deploy-2", "namespace": "ns-2", "creationTimestamp": "2019-03-01T16:38:00Z",
+                  'annotations': {ORIGINAL_REPLICAS_ANNOTATION: '2'}}, "spec": {"replicas": 0}}
     assert api.patch.call_args[1]['url'] == 'deployments/deploy-2'
     assert json.loads(api.patch.call_args[1]['data']) == patch_data
 

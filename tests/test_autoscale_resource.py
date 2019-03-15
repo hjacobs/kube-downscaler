@@ -128,3 +128,21 @@ def test_downtime_replicas_annotation_valid(resource):
     assert resource.replicas == 1
     resource.update.assert_called_once()
     assert resource.annotations[ORIGINAL_REPLICAS_ANNOTATION] == '2'
+
+
+def test_downtime_replicas_invalid(resource):
+    resource.replicas = 2
+    now = datetime.strptime('2018-10-23T21:56:00Z', '%Y-%m-%dT%H:%M:%SZ')
+    resource.metadata = {'creationTimestamp': '2018-10-23T21:55:00Z'}
+    autoscale_resource(resource, 'never', 'always', False, False, now, 0, "x")
+    assert resource.replicas == 2
+    resource.update.assert_not_called()
+
+
+def test_downtime_replicas_valid(resource):
+    resource.replicas = 2
+    now = datetime.strptime('2018-10-23T21:56:00Z', '%Y-%m-%dT%H:%M:%SZ')
+    resource.metadata = {'creationTimestamp': '2018-10-23T21:55:00Z'}
+    autoscale_resource(resource, 'never', 'always', False, False, now, 0, 1)
+    assert resource.replicas == 1
+    resource.update.assert_called_once()

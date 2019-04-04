@@ -35,16 +35,19 @@ def pods_force_uptime(api, namespace: str):
 
 def autoscale_resource(resource: pykube.objects.NamespacedAPIObject,
                        default_uptime: str, default_downtime: str, forced_uptime: bool, dry_run: bool,
-                       now: datetime.datetime, grace_period: int, downtime_replicas: int):
+                       now: datetime.datetime, grace_period: int, downtime_replicas: int, namespace_excluded=False):
     try:
         # any value different from "false" will ignore the resource (to be on the safe side)
-        exclude = resource.annotations.get(EXCLUDE_ANNOTATION, 'false').lower() != 'false'
-        if exclude:
+        exclude = namespace_excluded or (resource.annotations.get(EXCLUDE_ANNOTATION, 'false').lower() != 'false')
+        original_replicas = resource.annotations.get(ORIGINAL_REPLICAS_ANNOTATION)
+        downtime_replicas = resource.annotations.get(DOWNTIME_REPLICAS_ANNOTATION, downtime_replicas)
+
+        if exclude and not original_replicas:
             logger.debug('%s %s/%s was excluded', resource.kind, resource.namespace, resource.name)
         else:
             replicas = resource.replicas
 
-            if forced_uptime:
+            if forced_uptime or (exclude and original_replicas):
                 uptime = "forced"
                 downtime = "ignored"
                 is_uptime = True
@@ -53,8 +56,6 @@ def autoscale_resource(resource: pykube.objects.NamespacedAPIObject,
                 downtime = resource.annotations.get(DOWNTIME_ANNOTATION, default_downtime)
                 is_uptime = helper.matches_time_spec(now, uptime) and not helper.matches_time_spec(now, downtime)
 
-            original_replicas = resource.annotations.get(ORIGINAL_REPLICAS_ANNOTATION)
-            downtime_replicas = resource.annotations.get(DOWNTIME_REPLICAS_ANNOTATION, downtime_replicas)
             logger.debug('%s %s/%s has %s replicas (original: %s, uptime: %s)',
                          resource.kind, resource.namespace, resource.name, replicas, original_replicas, uptime)
             update_needed = False
@@ -94,21 +95,20 @@ def autoscale_resources(api, kind, namespace: str,
                         now: datetime.datetime, grace_period: int, downtime_replicas: int):
     for resource in kind.objects(api, namespace=(namespace or pykube.all)):
         if resource.namespace in exclude_namespaces or resource.name in exclude_names:
+            logger.debug('Resource %s was excluded (either resource itself or namespace %s are excluded)', resource.name, namespace)
             continue
 
         # Override defaults with (optional) annotations from Namespace
         namespace_obj = pykube.Namespace.objects(api).get_by_name(resource.namespace)
 
-        if namespace_obj.annotations.get(EXCLUDE_ANNOTATION, 'false').lower() != 'false':
-            logger.debug('Namespace %s was excluded (because of namespace annotation)', namespace)
-            continue
+        excluded = namespace_obj.annotations.get(EXCLUDE_ANNOTATION, 'false').lower() != 'false'
 
         default_uptime_for_namespace = namespace_obj.annotations.get(UPTIME_ANNOTATION, default_uptime)
         default_downtime_for_namespace = namespace_obj.annotations.get(DOWNTIME_ANNOTATION, default_downtime)
         forced_uptime_for_namespace = namespace_obj.annotations.get(FORCE_UPTIME_ANNOTATION, forced_uptime)
 
         autoscale_resource(resource, default_uptime_for_namespace, default_downtime_for_namespace,
-                           forced_uptime_for_namespace, dry_run, now, grace_period, downtime_replicas)
+                           forced_uptime_for_namespace, dry_run, now, grace_period, downtime_replicas, namespace_excluded=excluded)
 
 
 def scale(namespace: str, default_uptime: str, default_downtime: str, kinds: FrozenSet[str],

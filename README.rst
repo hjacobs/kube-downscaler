@@ -72,7 +72,7 @@ Time definitions (e.g. ``DEFAULT_UPTIME``) accept a comma separated list of spec
 
     DEFAULT_UPTIME="Mon-Fri 07:30-20:30 Europe/Berlin"
 
-To only downscale during the weekend and already Friday after 20:00:
+To only downscale during the weekend and Friday after 20:00:
 
 .. code-block:: bash
 

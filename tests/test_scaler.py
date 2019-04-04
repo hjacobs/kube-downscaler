@@ -1,7 +1,7 @@
 import json
 from unittest.mock import MagicMock
 
-from kube_downscaler.scaler import scale, ORIGINAL_REPLICAS_ANNOTATION
+from kube_downscaler.scaler import scale, ORIGINAL_REPLICAS_ANNOTATION, DOWNTIME_REPLICAS_ANNOTATION
 
 
 def test_scaler_always_up(monkeypatch):
@@ -122,7 +122,7 @@ def test_scaler_down_to(monkeypatch):
                 {
                     'metadata': {
                         'name': 'deploy-1', 'namespace': 'default', 'creationTimestamp': '2019-03-01T16:38:00Z',
-                        'annotations': {'downscaler/downtime-replicas': SCALE_TO},
+                        'annotations': {DOWNTIME_REPLICAS_ANNOTATION: SCALE_TO},
                     }, 'spec': {'replicas': 5}
                 },
                 ]}
@@ -143,4 +143,46 @@ def test_scaler_down_to(monkeypatch):
 
     assert api.patch.call_count == 1
     assert api.patch.call_args[1]['url'] == 'deployments/deploy-1'
-    assert json.loads(api.patch.call_args[1]['data'])["spec"]["replicas"] == SCALE_TO
+    assert json.loads(api.patch.call_args[1]['data'])['spec']['replicas'] == SCALE_TO
+
+
+def test_scaler_down_to_upscale(monkeypatch):
+    api = MagicMock()
+    monkeypatch.setattr('kube_downscaler.scaler.helper.get_kube_api', MagicMock(return_value=api))
+    SCALE_TO = 1
+    ORIGINAL = 3
+
+    def get(url, version, **kwargs):
+        if url == 'pods':
+            data = {'items': []}
+        elif url == 'deployments':
+            data = {'items': [
+                {
+                    'metadata': {
+                        'name': 'deploy-1', 'namespace': 'default', 'creationTimestamp': '2019-03-01T16:38:00Z',
+                        'annotations': {
+                            DOWNTIME_REPLICAS_ANNOTATION: SCALE_TO,
+                            ORIGINAL_REPLICAS_ANNOTATION: ORIGINAL,
+                        },
+                    }, 'spec': {'replicas': SCALE_TO}
+                },
+                ]}
+        elif url == 'namespaces/default':
+            data = {'metadata': {}}
+        else:
+            raise Exception(f'unexpected call: {url}, {version}, {kwargs}')
+
+        response = MagicMock()
+        response.json.return_value = data
+        return response
+
+    api.get = get
+
+    kinds = frozenset(['deployment'])
+    scale(namespace=None, default_uptime='always', default_downtime='never', kinds=kinds,
+          exclude_namespaces=[], exclude_deployments=[], exclude_statefulsets=[], dry_run=False, grace_period=300, downtime_replicas=0)
+
+    assert api.patch.call_count == 1
+    assert api.patch.call_args[1]['url'] == 'deployments/deploy-1'
+    assert json.loads(api.patch.call_args[1]['data'])['spec']['replicas'] == ORIGINAL
+    assert not json.loads(api.patch.call_args[1]['data'])['metadata']['annotations'][ORIGINAL_REPLICAS_ANNOTATION]

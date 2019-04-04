@@ -54,10 +54,12 @@ def autoscale_resource(resource: pykube.objects.NamespacedAPIObject,
                 is_uptime = helper.matches_time_spec(now, uptime) and not helper.matches_time_spec(now, downtime)
 
             original_replicas = resource.annotations.get(ORIGINAL_REPLICAS_ANNOTATION)
+            downtime_replicas = resource.annotations.get(DOWNTIME_REPLICAS_ANNOTATION, downtime_replicas)
             logger.debug('%s %s/%s has %s replicas (original: %s, uptime: %s)',
                          resource.kind, resource.namespace, resource.name, replicas, original_replicas, uptime)
             update_needed = False
-            if is_uptime and replicas == 0 and original_replicas and int(original_replicas) > 0:
+
+            if is_uptime and replicas == downtime_replicas and original_replicas and int(original_replicas) > 0:
                 logger.info('Scaling up %s %s/%s from %s to %s replicas (uptime: %s, downtime: %s)',
                             resource.kind, resource.namespace, resource.name, replicas, original_replicas,
                             uptime, downtime)

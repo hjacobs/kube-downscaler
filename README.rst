@@ -85,13 +85,16 @@ Alternative logic, based on periods
 
 Instead of strict uptimes or downtimes, you can chose time periods for upscaling or downscaling. The time definitions are the same. In this case, the upscale or downscale happens only on time periods, rest of times will be ignored.
 
-If upscale or downscale periods are configured, uptime and downtime will be ignored.
+If upscale or downscale periods are configured, uptime and downtime will be ignored. This means that some options are mutually exclusive, e.g. you can either use ``--downscale-period`` or ``--default-downtime``, but not both.
 
 This definition will downscale your cluster between 19:00 and 20:00. If you upscale your cluster manually, it won't be scale down, until next day 19:00-20:00.
 
 .. code-block:: bash
 
     DOWNSCALE_PERIOD="Mon-Sun 19:00-20:00 Europe/Berlin"
+
+Command Line Options
+====================
 
 Available command line options:
 
@@ -110,9 +113,9 @@ Available command line options:
 ``--grace-period``
     Grace period in seconds for new deployments before scaling them down (default: 15min). The grace period counts from time of creation of the deployment, i.e. updated deployments will immediately be scaled down regardless of the grace period.
 ``--upscale-period``
-    Period of time (only) to scale up for (default: never), can also be configured via environment variable ``UPSCALE_PERIOD`` or via the annotation ``downscaler/upscale-period`` on each deployment
+    Alternative logic to scale up only in given period of time (default: never), can also be configured via environment variable ``UPSCALE_PERIOD`` or via the annotation ``downscaler/upscale-period`` on each deployment
 ``--downscale-period``
-    Period of time (only) to scale down for (default: never), can also be configured via environment variable ``DOWNSCALE_PERIOD`` or via the annotation ``downscaler/downscale-period`` on each deployment
+    Alternative logic to scale down only in given period of time (default: never), can also be configured via environment variable ``DOWNSCALE_PERIOD`` or via the annotation ``downscaler/downscale-period`` on each deployment
 ``--default-uptime``
     Default time range to scale up for (default: always), can also be configured via environment variable ``DEFAULT_UPTIME`` or via the annotation ``downscaler/uptime`` on each deployment
 ``--default-downtime``

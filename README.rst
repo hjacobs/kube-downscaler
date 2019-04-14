@@ -101,7 +101,7 @@ Instead of strict uptimes or downtimes, you can chose time periods for upscaling
 
 If upscale or downscale periods are configured, uptime and downtime will be ignored. This means that some options are mutually exclusive, e.g. you can either use ``--downscale-period`` or ``--default-downtime``, but not both.
 
-This definition will downscale your cluster between 19:00 and 20:00. If you upscale your cluster manually, it won't be scale down, until next day 19:00-20:00.
+This definition will downscale your cluster between 19:00 and 20:00. If you upscale your cluster manually, it won't be scaled down until next day 19:00-20:00.
 
 .. code-block:: bash
 

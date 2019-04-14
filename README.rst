@@ -48,7 +48,7 @@ The `official cluster autoscaler <https://github.com/kubernetes/autoscaler/tree/
 Usage
 =====
 
-Deploy the downscaler into your cluster via (also works with Minikube):
+Deploy the downscaler into your cluster via (also works with kind_ or Minikube_):
 
 .. code-block:: bash
 
@@ -59,6 +59,20 @@ The example configuration uses the ``--dry-run`` as a safety flag to prevent dow
 .. code-block:: bash
 
     $ kubectl edit deploy kube-downscaler
+
+The example deployment manifests come with a configured uptime (``deploy/config.yaml`` sets it to "Mon-Fri 07:30-20:30 CET"), you can overwrite this per namespace or deployment, e.g.:
+
+.. code-block:: bash
+
+    $ kubectl run nginx --image=nginx
+    $ kubectl annotate deploy nginx 'downscaler/uptime=Mon-Fri 09:00-17:00 America/Buenos_Aires'
+
+Note that the default grace period of 15 minutes applies to the new nginx deployment, i.e. if the current time is not within Mon-Fri 9-17 (Buenos Aires timezone), it will downscale not immediately, but after 15 minutes.
+The downscaler will eventually log something like:
+
+::
+
+    INFO: Scaling down Deployment default/nginx from 1 to 0 replicas (uptime: Mon-Fri 09:00-17:00 America/Buenos_Aires, downtime: never)
 
 
 Configuration
@@ -181,3 +195,5 @@ along with this program.  If not, see http://www.gnu.org/licenses/.
 
 .. _ping try_except_ on Twitter: https://twitter.com/try_except_
 .. _issues labeled with "help wanted": https://github.com/hjacobs/kube-downscaler/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22
+.. _kind: https://kind.sigs.k8s.io/
+.. _Minikube: https://github.com/kubernetes/minikube

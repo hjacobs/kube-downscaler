@@ -10,6 +10,8 @@ from kube_downscaler.resources.stackset import StackSet
 logger = logging.getLogger(__name__)
 ORIGINAL_REPLICAS_ANNOTATION = 'downscaler/original-replicas'
 FORCE_UPTIME_ANNOTATION = 'downscaler/force-uptime'
+UPSCALE_PERIOD_ANNOTATION = 'downscaler/upscale-period'
+DOWNSCALE_PERIOD_ANNOTATION = 'downscaler/downscale-period'
 EXCLUDE_ANNOTATION = 'downscaler/exclude'
 UPTIME_ANNOTATION = 'downscaler/uptime'
 DOWNTIME_ANNOTATION = 'downscaler/downtime'
@@ -33,7 +35,7 @@ def pods_force_uptime(api, namespace: str):
     return False
 
 
-def autoscale_resource(resource: pykube.objects.NamespacedAPIObject,
+def autoscale_resource(resource: pykube.objects.NamespacedAPIObject, upscale_period: str, downscale_period: str,
                        default_uptime: str, default_downtime: str, forced_uptime: bool, dry_run: bool,
                        now: datetime.datetime, grace_period: int, downtime_replicas: int, namespace_excluded=False):
     try:
@@ -46,11 +48,24 @@ def autoscale_resource(resource: pykube.objects.NamespacedAPIObject,
             logger.debug('%s %s/%s was excluded', resource.kind, resource.namespace, resource.name)
         else:
             replicas = resource.replicas
+            ignore = False
 
             if forced_uptime or (exclude and original_replicas):
                 uptime = "forced"
                 downtime = "ignored"
                 is_uptime = True
+            elif upscale_period != 'never' or downscale_period != 'never':
+                uptime = resource.annotations.get(UPSCALE_PERIOD_ANNOTATION, upscale_period)
+                downtime = resource.annotations.get(DOWNSCALE_PERIOD_ANNOTATION, downscale_period)
+                if helper.matches_time_spec(now, uptime) and helper.matches_time_spec(now, downtime):
+                    logger.debug('Upscale and downscale periods overlap, do nothing')
+                    ignore = True
+                elif helper.matches_time_spec(now, uptime):
+                    is_uptime = True
+                elif helper.matches_time_spec(now, downtime):
+                    is_uptime = False
+                else:
+                    ignore = True
             else:
                 uptime = resource.annotations.get(UPTIME_ANNOTATION, default_uptime)
                 downtime = resource.annotations.get(DOWNTIME_ANNOTATION, default_downtime)
@@ -60,14 +75,14 @@ def autoscale_resource(resource: pykube.objects.NamespacedAPIObject,
                          resource.kind, resource.namespace, resource.name, replicas, original_replicas, uptime)
             update_needed = False
 
-            if is_uptime and replicas == downtime_replicas and original_replicas and int(original_replicas) > 0:
+            if not ignore and is_uptime and replicas == downtime_replicas and original_replicas and int(original_replicas) > 0:
                 logger.info('Scaling up %s %s/%s from %s to %s replicas (uptime: %s, downtime: %s)',
                             resource.kind, resource.namespace, resource.name, replicas, original_replicas,
                             uptime, downtime)
                 resource.replicas = int(original_replicas)
                 resource.annotations[ORIGINAL_REPLICAS_ANNOTATION] = None
                 update_needed = True
-            elif not is_uptime and replicas > 0:
+            elif not ignore and not is_uptime and replicas > 0:
                 target_replicas = int(resource.annotations.get(DOWNTIME_REPLICAS_ANNOTATION, downtime_replicas))
                 if within_grace_period(resource, grace_period, now):
                     logger.info('%s %s/%s within grace period (%ds), not scaling down (yet)',
@@ -91,6 +106,7 @@ def autoscale_resource(resource: pykube.objects.NamespacedAPIObject,
 
 def autoscale_resources(api, kind, namespace: str,
                         exclude_namespaces: FrozenSet[str], exclude_names: FrozenSet[str],
+                        upscale_period: str, downscale_period: str,
                         default_uptime: str, default_downtime: str, forced_uptime: bool, dry_run: bool,
                         now: datetime.datetime, grace_period: int, downtime_replicas: int):
     for resource in kind.objects(api, namespace=(namespace or pykube.all)):
@@ -105,13 +121,17 @@ def autoscale_resources(api, kind, namespace: str,
 
         default_uptime_for_namespace = namespace_obj.annotations.get(UPTIME_ANNOTATION, default_uptime)
         default_downtime_for_namespace = namespace_obj.annotations.get(DOWNTIME_ANNOTATION, default_downtime)
+        upscale_period_for_namespace = namespace_obj.annotations.get(UPSCALE_PERIOD_ANNOTATION, upscale_period)
+        downscale_period_for_namespace = namespace_obj.annotations.get(DOWNSCALE_PERIOD_ANNOTATION, downscale_period)
         forced_uptime_for_namespace = namespace_obj.annotations.get(FORCE_UPTIME_ANNOTATION, forced_uptime)
 
-        autoscale_resource(resource, default_uptime_for_namespace, default_downtime_for_namespace,
-                           forced_uptime_for_namespace, dry_run, now, grace_period, downtime_replicas, namespace_excluded=excluded)
+        autoscale_resource(resource, upscale_period_for_namespace, downscale_period_for_namespace,
+                           default_uptime_for_namespace, default_downtime_for_namespace, forced_uptime_for_namespace,
+                           dry_run, now, grace_period, downtime_replicas, namespace_excluded=excluded)
 
 
-def scale(namespace: str, default_uptime: str, default_downtime: str, kinds: FrozenSet[str],
+def scale(namespace: str, upscale_period: str, downscale_period: str,
+          default_uptime: str, default_downtime: str, kinds: FrozenSet[str],
           exclude_namespaces: FrozenSet[str],
           exclude_deployments: FrozenSet[str],
           exclude_statefulsets: FrozenSet[str],
@@ -123,11 +143,11 @@ def scale(namespace: str, default_uptime: str, default_downtime: str, kinds: Fro
     forced_uptime = pods_force_uptime(api, namespace)
 
     if 'deployment' in kinds:
-        autoscale_resources(api, Deployment, namespace, exclude_namespaces, exclude_deployments,
+        autoscale_resources(api, Deployment, namespace, exclude_namespaces, exclude_deployments, upscale_period, downscale_period,
                             default_uptime, default_downtime, forced_uptime, dry_run, now, grace_period, downtime_replicas)
     if 'statefulset' in kinds:
-        autoscale_resources(api, StatefulSet, namespace, exclude_namespaces, exclude_statefulsets,
+        autoscale_resources(api, StatefulSet, namespace, exclude_namespaces, exclude_statefulsets, upscale_period, downscale_period,
                             default_uptime, default_downtime, forced_uptime, dry_run, now, grace_period, downtime_replicas)
     if 'stackset' in kinds:
-        autoscale_resources(api, StackSet, namespace, exclude_namespaces, exclude_statefulsets,
+        autoscale_resources(api, StackSet, namespace, exclude_namespaces, exclude_statefulsets, upscale_period, downscale_period,
                             default_uptime, default_downtime, forced_uptime, dry_run, now, grace_period, downtime_replicas)

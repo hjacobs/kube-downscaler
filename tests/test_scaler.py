@@ -29,7 +29,7 @@ def test_scaler_always_up(monkeypatch):
     api.get = get
 
     kinds = frozenset(['statefulset', 'deployment', 'stackset'])
-    scale(namespace=None, default_uptime='always', default_downtime='never', kinds=kinds,
+    scale(namespace=None, upscale_period='never', downscale_period='never', default_uptime='always', default_downtime='never', kinds=kinds,
           exclude_namespaces=[], exclude_deployments=[], exclude_statefulsets=[], dry_run=False, grace_period=300, downtime_replicas=0)
 
     api.patch.assert_not_called()
@@ -59,7 +59,7 @@ def test_scaler_namespace_excluded(monkeypatch):
     api.get = get
 
     kinds = frozenset(['deployment'])
-    scale(namespace=None, default_uptime='never', default_downtime='always', kinds=kinds,
+    scale(namespace=None, upscale_period='never', downscale_period='never', default_uptime='never', default_downtime='always', kinds=kinds,
           exclude_namespaces=['system-ns'], exclude_deployments=[], exclude_statefulsets=[], dry_run=False, grace_period=300, downtime_replicas=0)
 
     assert api.patch.call_count == 1
@@ -97,7 +97,7 @@ def test_scaler_namespace_excluded_via_annotation(monkeypatch):
     api.get = get
 
     kinds = frozenset(['deployment'])
-    scale(namespace=None, default_uptime='never', default_downtime='always', kinds=kinds,
+    scale(namespace=None, upscale_period='never', downscale_period='never', default_uptime='never', default_downtime='always', kinds=kinds,
           exclude_namespaces=[], exclude_deployments=[], exclude_statefulsets=[], dry_run=False, grace_period=300, downtime_replicas=0)
 
     assert api.patch.call_count == 1
@@ -138,7 +138,7 @@ def test_scaler_down_to(monkeypatch):
     api.get = get
 
     kinds = frozenset(['deployment'])
-    scale(namespace=None, default_uptime='never', default_downtime='always', kinds=kinds,
+    scale(namespace=None, upscale_period='never', downscale_period='never', default_uptime='never', default_downtime='always', kinds=kinds,
           exclude_namespaces=[], exclude_deployments=[], exclude_statefulsets=[], dry_run=False, grace_period=300, downtime_replicas=0)
 
     assert api.patch.call_count == 1
@@ -179,7 +179,7 @@ def test_scaler_down_to_upscale(monkeypatch):
     api.get = get
 
     kinds = frozenset(['deployment'])
-    scale(namespace=None, default_uptime='always', default_downtime='never', kinds=kinds,
+    scale(namespace=None, upscale_period='never', downscale_period='never', default_uptime='always', default_downtime='never', kinds=kinds,
           exclude_namespaces=[], exclude_deployments=[], exclude_statefulsets=[], dry_run=False, grace_period=300, downtime_replicas=0)
 
     assert api.patch.call_count == 1
@@ -220,7 +220,7 @@ def test_scaler_upscale_on_exclude(monkeypatch):
     api.get = get
 
     kinds = frozenset(['deployment'])
-    scale(namespace=None, default_uptime='never', default_downtime='always', kinds=kinds,
+    scale(namespace=None, upscale_period='never', downscale_period='never', default_uptime='never', default_downtime='always', kinds=kinds,
           exclude_namespaces=[], exclude_deployments=[], exclude_statefulsets=[], dry_run=False, grace_period=300, downtime_replicas=0)
 
     assert api.patch.call_count == 1
@@ -260,10 +260,41 @@ def test_scaler_upscale_on_exclude_namespace(monkeypatch):
     api.get = get
 
     kinds = frozenset(['deployment'])
-    scale(namespace=None, default_uptime='never', default_downtime='always', kinds=kinds,
+    scale(namespace=None, upscale_period='never', downscale_period='never', default_uptime='never', default_downtime='always', kinds=kinds,
           exclude_namespaces=[], exclude_deployments=[], exclude_statefulsets=[], dry_run=False, grace_period=300, downtime_replicas=0)
 
     assert api.patch.call_count == 1
     assert api.patch.call_args[1]['url'] == 'deployments/deploy-1'
     assert json.loads(api.patch.call_args[1]['data'])["spec"]["replicas"] == ORIGINAL_REPLICAS
     assert not json.loads(api.patch.call_args[1]['data'])["metadata"]["annotations"][ORIGINAL_REPLICAS_ANNOTATION]
+
+
+def test_scaler_always_upscale(monkeypatch):
+    api = MagicMock()
+    monkeypatch.setattr('kube_downscaler.scaler.helper.get_kube_api', MagicMock(return_value=api))
+
+    def get(url, version, **kwargs):
+        if url == 'pods':
+            data = {'items': []}
+        elif url == 'deployments':
+            data = {'items': [{'metadata': {'name': 'deploy-1', 'namespace': 'ns-1'}, 'spec': {'replicas': 1}}]}
+        elif url == 'statefulsets':
+            data = {'items': []}
+        elif url == 'stacksets':
+            data = {'items': []}
+        elif url == 'namespaces/ns-1':
+            data = {'metadata': {}}
+        else:
+            raise Exception(f'unexpected call: {url}, {version}, {kwargs}')
+
+        response = MagicMock()
+        response.json.return_value = data
+        return response
+
+    api.get = get
+
+    kinds = frozenset(['statefulset', 'deployment', 'stackset'])
+    scale(namespace=None, upscale_period='always', downscale_period='never', default_uptime='never', default_downtime='always', kinds=kinds,
+          exclude_namespaces=[], exclude_deployments=[], exclude_statefulsets=[], dry_run=False, grace_period=300, downtime_replicas=0)
+
+    api.patch.assert_not_called()

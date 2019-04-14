@@ -21,14 +21,14 @@ Deployments are interchangeable by statefulset for this whole guide.
 It will scale down the deployment's replicas if all of the following conditions are met:
 
 * current time is not part of the "uptime" schedule or current time is part of the "downtime" schedule. The schedules are being evaluated in following order:
-    * ``downscaler/downtime`` annotation on the deployment/stateful set
-    * ``downscaler/uptime`` annotation on the deployment/stateful set
-    * ``downscaler/downtime`` annotation on the deployment/stateful set's namespace
-    * ``downscaler/uptime`` annotation on th deployment/stateful set's namespace
-    * ``--default-uptime`` cli argument
-    * ``--default-downtime`` cli argument
-    * ``DEFAULT_UPTIME`` environment variable
-    * ``DEFAULT_DOWNTIME`` environment variable
+    * ``downscaler/downscale-period`` or ``downscaler/downtime`` annotation on the deployment/stateful set
+    * ``downscaler/upscale-period`` or ``downscaler/uptime`` annotation on the deployment/stateful set
+    * ``downscaler/downscale-period`` or ``downscaler/downtime`` annotation on the deployment/stateful set's namespace
+    * ``downscaler/upscale-period`` or ``downscaler/uptime`` annotation on th deployment/stateful set's namespace
+    * ``--upscale-period`` or ``--default-uptime`` cli argument
+    * ``--downscale-period`` or ``--default-downtime`` cli argument
+    * ``UPSCALE_PERIOD`` or ``DEFAULT_UPTIME`` environment variable
+    * ``DOWNSCALE_PERIOD`` or ``DEFAULT_DOWNTIME`` environment variable
 * the deployment's namespace is not part of the exclusion list (``kube-system`` is excluded by default)
 * the deployment's name is not part of the exclusion list
 * the deployment is not marked for exclusion (annotation ``downscaler/exclude: "true"``)
@@ -80,6 +80,19 @@ To only downscale during the weekend and Friday after 20:00:
 
 Each time specification must have the format ``<WEEKDAY-FROM>-<WEEKDAY-TO-INCLUSIVE> <HH>:<MM>-<HH>:<MM> <TIMEZONE>``. The timezone value can be any `Olson timezone <https://en.wikipedia.org/wiki/Tz_database>`_, e.g. "US/Eastern", "PST" or "UTC".
 
+Alternative logic, based on periods
+===================================
+
+Instead of strict uptimes or downtimes, you can chose time periods for upscaling or downscaling. The time definitions are the same. In this case, the upscale or downscale happens only on time periods, rest of times will be ignored.
+
+If upscale or downscale periods are configured, uptime and downtime will be ignored.
+
+This definition will downscale your cluster between 19:00 and 20:00. If you upscale your cluster manually, it won't be scale down, until next day 19:00-20:00.
+
+.. code-block:: bash
+
+    DOWNSCALE_PERIOD="Mon-Sun 19:00-20:00 Europe/Berlin"
+
 Available command line options:
 
 ``--dry-run``
@@ -96,6 +109,10 @@ Available command line options:
     Downscale resources of this kind (default: deployment)
 ``--grace-period``
     Grace period in seconds for new deployments before scaling them down (default: 15min). The grace period counts from time of creation of the deployment, i.e. updated deployments will immediately be scaled down regardless of the grace period.
+``--upscale-period``
+    Period of time (only) to scale up for (default: never), can also be configured via environment variable ``UPSCALE_PERIOD`` or via the annotation ``downscaler/upscale-period`` on each deployment
+``--downscale-period``
+    Period of time (only) to scale down for (default: never), can also be configured via environment variable ``DOWNSCALE_PERIOD`` or via the annotation ``downscaler/downscale-period`` on each deployment
 ``--default-uptime``
     Default time range to scale up for (default: always), can also be configured via environment variable ``DEFAULT_UPTIME`` or via the annotation ``downscaler/uptime`` on each deployment
 ``--default-downtime``
@@ -127,6 +144,8 @@ Namespace Defaults
 
 The following annotations are supported on the Namespace level:
 
+* ``downscaler/upscale-period``
+* ``downscaler/downscale-period``
 * ``downscaler/uptime``
 * ``downscaler/downtime``
 * ``downscaler/force-uptime``

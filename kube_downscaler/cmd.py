@@ -5,6 +5,8 @@ import argparse
 
 def get_parser():
     parser = argparse.ArgumentParser()
+    upscale_group = parser.add_mutually_exclusive_group(required=False)
+    downscalescale_group = parser.add_mutually_exclusive_group(required=False)
     parser.add_argument('--dry-run', help='Dry run mode: do not change anything, just print what would be done',
                         action='store_true')
     parser.add_argument('--debug', '-d', help='Debug mode: print more information', action='store_true')
@@ -16,10 +18,14 @@ def get_parser():
     parser.add_argument('--grace-period', type=int,
                         help='Grace period in seconds for deployments before scaling down (default: 15min)',
                         default=900)
-    parser.add_argument('--default-uptime', help='Default time range to scale up for (default: always)',
-                        default=os.getenv('DEFAULT_UPTIME', 'always'))
-    parser.add_argument('--default-downtime', help='Default time range to scale down for (default: never)',
-                        default=os.getenv('DEFAULT_DOWNTIME', 'never'))
+    upscale_group.add_argument('--upscale-period', help='Default time period to scale up once (default: never)',
+                               default=os.getenv('UPSCALE_PERIOD', 'never'))
+    upscale_group.add_argument('--default-uptime', help='Default time range to scale up for (default: always)',
+                               default=os.getenv('DEFAULT_UPTIME', 'always'))
+    downscalescale_group.add_argument('--downscale-period', help='Default time period to scale down once (default: never)',
+                                      default=os.getenv('DOWNSCALE_PERIOD', 'never'))
+    downscalescale_group.add_argument('--default-downtime', help='Default time range to scale down for (default: never)',
+                                      default=os.getenv('DEFAULT_DOWNTIME', 'never'))
     parser.add_argument('--exclude-namespaces', help='Exclude namespaces from downscaling (default: kube-system)',
                         default=os.getenv('EXCLUDE_NAMESPACES', 'kube-system'))
     parser.add_argument('--exclude-deployments',

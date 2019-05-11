@@ -5,7 +5,7 @@ from typing import FrozenSet
 
 from kube_downscaler import helper
 from pykube import Deployment, StatefulSet
-from kube_downscaler.resources.stackset import StackSet
+from kube_downscaler.resources.stack import Stack
 
 logger = logging.getLogger(__name__)
 ORIGINAL_REPLICAS_ANNOTATION = 'downscaler/original-replicas'
@@ -35,12 +35,28 @@ def pods_force_uptime(api, namespace: str):
     return False
 
 
+def is_stack_deployment(resource: pykube.objects.NamespacedAPIObject) -> bool:
+    if resource.kind == Deployment.kind and resource.version == Deployment.version:
+        for owner_ref in resource.metadata.get("ownerReferences", []):
+            if owner_ref["apiVersion"] == Stack.version and owner_ref["kind"] == Stack.kind:
+                return True
+    return False
+
+
+def ignore_resource(resource: pykube.objects.NamespacedAPIObject) -> bool:
+    # Ignore deployments managed by stacks, we will downscale the stack instead
+    if is_stack_deployment(resource):
+        return True
+
+    # any value different from "false" will ignore the resource (to be on the safe side)
+    return resource.annotations.get(EXCLUDE_ANNOTATION, 'false').lower() != 'false'
+
+
 def autoscale_resource(resource: pykube.objects.NamespacedAPIObject, upscale_period: str, downscale_period: str,
                        default_uptime: str, default_downtime: str, forced_uptime: bool, dry_run: bool,
                        now: datetime.datetime, grace_period: int, downtime_replicas: int, namespace_excluded=False):
     try:
-        # any value different from "false" will ignore the resource (to be on the safe side)
-        exclude = namespace_excluded or (resource.annotations.get(EXCLUDE_ANNOTATION, 'false').lower() != 'false')
+        exclude = namespace_excluded or ignore_resource(resource)
         original_replicas = resource.annotations.get(ORIGINAL_REPLICAS_ANNOTATION)
         downtime_replicas = resource.annotations.get(DOWNTIME_REPLICAS_ANNOTATION, downtime_replicas)
 
@@ -148,6 +164,6 @@ def scale(namespace: str, upscale_period: str, downscale_period: str,
     if 'statefulset' in kinds:
         autoscale_resources(api, StatefulSet, namespace, exclude_namespaces, exclude_statefulsets, upscale_period, downscale_period,
                             default_uptime, default_downtime, forced_uptime, dry_run, now, grace_period, downtime_replicas)
-    if 'stackset' in kinds:
-        autoscale_resources(api, StackSet, namespace, exclude_namespaces, exclude_statefulsets, upscale_period, downscale_period,
+    if 'stack' in kinds:
+        autoscale_resources(api, Stack, namespace, exclude_namespaces, exclude_statefulsets, upscale_period, downscale_period,
                             default_uptime, default_downtime, forced_uptime, dry_run, now, grace_period, downtime_replicas)

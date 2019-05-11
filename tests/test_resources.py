@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 from pykube.objects import NamespacedAPIObject
 
 from pykube import Deployment, StatefulSet
-from kube_downscaler.resources.stackset import StackSet
+from kube_downscaler.resources.stack import Stack
 
 
 def test_deployment():
@@ -29,12 +29,12 @@ def test_statefulset():
     assert scalable_mock['spec']['replicas'] == 10
 
 
-def test_stackset():
+def test_stack():
     api_mock = MagicMock(spec=NamespacedAPIObject, name="APIMock")
-    scalable_mock = {'spec': {'stackTemplate': {'spec': {'replicas': 3}}}}
+    scalable_mock = {'spec': {'replicas': 3}}
     api_mock.obj = MagicMock(name="APIObjMock")
-    d = StackSet(api_mock, scalable_mock)
+    d = Stack(api_mock, scalable_mock)
     r = d.replicas
     assert r == 3
     d.replicas = 10
-    assert scalable_mock['spec']['stackTemplate']['spec']['replicas'] == 10
+    assert scalable_mock['spec']['replicas'] == 10

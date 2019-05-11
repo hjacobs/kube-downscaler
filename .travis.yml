@@ -12,3 +12,5 @@ script:
   - make test docker
 after_success:
   - coveralls
+env:
+  PIPENV_IGNORE_VIRTUALENVS=1

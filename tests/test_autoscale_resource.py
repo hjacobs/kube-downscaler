@@ -4,9 +4,11 @@ import pytest
 import logging
 
 from datetime import datetime
+from pykube import Deployment
 from unittest.mock import MagicMock
 
 from kube_downscaler.scaler import autoscale_resource, EXCLUDE_ANNOTATION, ORIGINAL_REPLICAS_ANNOTATION, DOWNTIME_REPLICAS_ANNOTATION
+from kube_downscaler.resources.stack import Stack
 
 
 @pytest.fixture
@@ -205,3 +207,25 @@ def test_downscale_period_not_match(resource):
     autoscale_resource(resource, 'never', 'Mon-Fri 07:30-10:00 Europe/Berlin', 'always', 'never', False, False, now, 0, 0)
     assert resource.replicas == 2
     resource.update.assert_not_called()
+
+
+def test_downscale_stack_deployment_ignored():
+    resource = MagicMock()
+    resource.kind = Deployment.kind
+    resource.version = Deployment.version
+    resource.namespace = 'mock'
+    resource.name = 'res-1'
+    resource.metadata = {
+        'creationTimestamp': '2018-10-23T21:55:00Z',
+        'ownerReferences': [{
+            'apiVersion': Stack.version,
+            'kind': Stack.kind
+        }]}
+    resource.replicas = 1
+    resource.annotations = {}
+
+    now = datetime.strptime('2018-10-23T21:56:00Z', '%Y-%m-%dT%H:%M:%SZ')
+    autoscale_resource(resource, 'never', 'never', 'never', 'always', False, False, now, 0, 0)
+    assert resource.replicas == 1
+    resource.update.assert_not_called()
+    assert ORIGINAL_REPLICAS_ANNOTATION not in resource.annotations

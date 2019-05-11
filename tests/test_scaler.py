@@ -15,7 +15,7 @@ def test_scaler_always_up(monkeypatch):
             data = {'items': [{'metadata': {'name': 'deploy-1', 'namespace': 'ns-1'}, 'spec': {'replicas': 1}}]}
         elif url == 'statefulsets':
             data = {'items': []}
-        elif url == 'stacksets':
+        elif url == 'stacks':
             data = {'items': []}
         elif url == 'namespaces/ns-1':
             data = {'metadata': {}}
@@ -28,7 +28,7 @@ def test_scaler_always_up(monkeypatch):
 
     api.get = get
 
-    kinds = frozenset(['statefulset', 'deployment', 'stackset'])
+    kinds = frozenset(['statefulset', 'deployment', 'stack'])
     scale(namespace=None, upscale_period='never', downscale_period='never', default_uptime='always', default_downtime='never', kinds=kinds,
           exclude_namespaces=[], exclude_deployments=[], exclude_statefulsets=[], dry_run=False, grace_period=300, downtime_replicas=0)
 
@@ -280,7 +280,7 @@ def test_scaler_always_upscale(monkeypatch):
             data = {'items': [{'metadata': {'name': 'deploy-1', 'namespace': 'ns-1'}, 'spec': {'replicas': 1}}]}
         elif url == 'statefulsets':
             data = {'items': []}
-        elif url == 'stacksets':
+        elif url == 'stacks':
             data = {'items': []}
         elif url == 'namespaces/ns-1':
             data = {'metadata': {}}
@@ -293,7 +293,7 @@ def test_scaler_always_upscale(monkeypatch):
 
     api.get = get
 
-    kinds = frozenset(['statefulset', 'deployment', 'stackset'])
+    kinds = frozenset(['statefulset', 'deployment', 'stack'])
     scale(namespace=None, upscale_period='always', downscale_period='never', default_uptime='never', default_downtime='always', kinds=kinds,
           exclude_namespaces=[], exclude_deployments=[], exclude_statefulsets=[], dry_run=False, grace_period=300, downtime_replicas=0)
 

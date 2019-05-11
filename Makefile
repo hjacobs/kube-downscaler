@@ -8,7 +8,7 @@ default: docker
 
 test:
 	pipenv run flake8
-	pipenv run coverage run --source=kube_downscaler -m py.test
+	pipenv run coverage run --source=kube_downscaler -m py.test -v
 	pipenv run coverage report
 
 docker: 

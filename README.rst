@@ -24,7 +24,7 @@ It will scale down the deployment's replicas if all of the following conditions 
     * ``downscaler/downscale-period`` or ``downscaler/downtime`` annotation on the deployment/stateful set
     * ``downscaler/upscale-period`` or ``downscaler/uptime`` annotation on the deployment/stateful set
     * ``downscaler/downscale-period`` or ``downscaler/downtime`` annotation on the deployment/stateful set's namespace
-    * ``downscaler/upscale-period`` or ``downscaler/uptime`` annotation on th deployment/stateful set's namespace
+    * ``downscaler/upscale-period`` or ``downscaler/uptime`` annotation on the deployment/stateful set's namespace
     * ``--upscale-period`` or ``--default-uptime`` cli argument
     * ``--downscale-period`` or ``--default-downtime`` cli argument
     * ``UPSCALE_PERIOD`` or ``DEFAULT_UPTIME`` environment variable
@@ -34,7 +34,7 @@ It will scale down the deployment's replicas if all of the following conditions 
 * the deployment is not marked for exclusion (annotation ``downscaler/exclude: "true"``)
 * there are no active pods that force the whole cluster into uptime (annotation ``downscaler/force-uptime: "true"``)
 
-The deployment by default will be scaled down to zero replicas. This can be configured with a deployment annotation of ``downscaler/downtime-replicas`` (e.g. ``downscaler/downtime-replicas: "1"``) or via CLI with ``--downtime-replicas``.
+The deployment by default will be scaled down to zero replicas. This can be configured with a deployment or its namespace's annotation of ``downscaler/downtime-replicas`` (e.g. ``downscaler/downtime-replicas: "1"``) or via CLI with ``--downtime-replicas``.
 
 Example use cases:
 
@@ -167,6 +167,7 @@ The following annotations are supported on the Namespace level:
 * ``downscaler/downtime``
 * ``downscaler/force-uptime``
 * ``downscaler/exclude``
+* ``downscaler/downtime-replicas``
 
 Contributing
 ============

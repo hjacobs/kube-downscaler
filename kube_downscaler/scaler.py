@@ -137,13 +137,14 @@ def autoscale_resources(api, kind, namespace: str,
 
         default_uptime_for_namespace = namespace_obj.annotations.get(UPTIME_ANNOTATION, default_uptime)
         default_downtime_for_namespace = namespace_obj.annotations.get(DOWNTIME_ANNOTATION, default_downtime)
+        default_downtime_replicas_for_namespace = namespace_obj.annotations.get(DOWNTIME_REPLICAS_ANNOTATION, downtime_replicas)
         upscale_period_for_namespace = namespace_obj.annotations.get(UPSCALE_PERIOD_ANNOTATION, upscale_period)
         downscale_period_for_namespace = namespace_obj.annotations.get(DOWNSCALE_PERIOD_ANNOTATION, downscale_period)
         forced_uptime_for_namespace = namespace_obj.annotations.get(FORCE_UPTIME_ANNOTATION, forced_uptime)
 
         autoscale_resource(resource, upscale_period_for_namespace, downscale_period_for_namespace,
                            default_uptime_for_namespace, default_downtime_for_namespace, forced_uptime_for_namespace,
-                           dry_run, now, grace_period, downtime_replicas, namespace_excluded=excluded)
+                           dry_run, now, grace_period, default_downtime_replicas_for_namespace, namespace_excluded=excluded)
 
 
 def scale(namespace: str, upscale_period: str, downscale_period: str,

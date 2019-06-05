@@ -7,7 +7,8 @@ VALID_RESOURCES = frozenset(["deployments", "statefulsets", "stacks"])
 
 def check_include_resources(value):
     resources = frozenset(value.split(','))
-    assert resources <= VALID_RESOURCES, "--include-resources argument should contain a subset of {}".format(list(VALID_RESOURCES))
+    if not resources <= VALID_RESOURCES:
+        raise argparse.ArgumentTypeError(f"--include-resources argument should contain a subset of [{', '.join(VALID_RESOURCES)}]")
     return value
 
 

@@ -23,7 +23,7 @@ rbac:
   serviceAccountName: default
 image:
   repository: hjacobs/kube-downscaler
-  tag: 0.15
+  tag: 0.16
   pullPolicy: IfNotPresent
   args: []
     # --default-uptime="Mon-Fri 07:30-20:30 Europe/Berlin"

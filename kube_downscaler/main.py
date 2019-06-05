@@ -34,7 +34,7 @@ def run_loop(run_once, namespace, kinds, upscale_period, downscale_period, defau
     while True:
         try:
             scale(namespace, upscale_period, downscale_period, default_uptime, default_downtime,
-                  kinds=frozenset(kinds),
+                  kinds=frozenset(kinds.split(',')),
                   exclude_namespaces=frozenset(exclude_namespaces.split(',')),
                   exclude_deployments=frozenset(exclude_deployments.split(',')),
                   exclude_statefulsets=frozenset(exclude_statefulsets.split(',')),

@@ -2,6 +2,12 @@ import os
 
 import argparse
 
+VALID_KINDS = ["deployments", "statefulsets", "stacks"]
+
+def check_kinds(value):
+  kinds = frozenset(value.split(','))
+  assert kinds.issubset(frozenset(VALID_KINDS)), "--kind argument should contain a subset of {}".format(VALID_KINDS)
+  return value
 
 def get_parser():
     parser = argparse.ArgumentParser()
@@ -13,8 +19,8 @@ def get_parser():
     parser.add_argument('--once', help='Run loop only once and exit', action='store_true')
     parser.add_argument('--interval', type=int, help='Loop interval (default: 30s)', default=30)
     parser.add_argument('--namespace', help='Namespace')
-    parser.add_argument('--kind', choices=['deployment', 'statefulset', 'stack'], action='append',
-                        default=['deployment'], help='Downscale resources of this kind (default: deployment)')
+    parser.add_argument('--kind', type=check_kinds, default="deployments",
+                        help='Downscale resources of this kind as comma separated list. [deployments, statefulsets, stacks] (default: deployments)')
     parser.add_argument('--grace-period', type=int,
                         help='Grace period in seconds for deployments before scaling down (default: 15min)',
                         default=900)

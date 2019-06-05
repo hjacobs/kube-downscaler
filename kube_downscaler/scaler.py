@@ -159,12 +159,12 @@ def scale(namespace: str, upscale_period: str, downscale_period: str,
     now = datetime.datetime.utcnow()
     forced_uptime = pods_force_uptime(api, namespace)
 
-    if 'deployment' in kinds:
+    if 'deployments' in kinds:
         autoscale_resources(api, Deployment, namespace, exclude_namespaces, exclude_deployments, upscale_period, downscale_period,
                             default_uptime, default_downtime, forced_uptime, dry_run, now, grace_period, downtime_replicas)
-    if 'statefulset' in kinds:
+    if 'statefulsets' in kinds:
         autoscale_resources(api, StatefulSet, namespace, exclude_namespaces, exclude_statefulsets, upscale_period, downscale_period,
                             default_uptime, default_downtime, forced_uptime, dry_run, now, grace_period, downtime_replicas)
-    if 'stack' in kinds:
+    if 'stacks' in kinds:
         autoscale_resources(api, Stack, namespace, exclude_namespaces, exclude_statefulsets, upscale_period, downscale_period,
                             default_uptime, default_downtime, forced_uptime, dry_run, now, grace_period, downtime_replicas)

@@ -2,12 +2,12 @@ import os
 
 import argparse
 
-VALID_RESOURCES = ["deployments", "statefulsets", "stacks"]
+VALID_RESOURCES = frozenset(["deployments", "statefulsets", "stacks"])
 
 
 def check_include_resources(value):
     resources = frozenset(value.split(','))
-    assert resources.issubset(frozenset(VALID_RESOURCES)), "--include-resources argument should contain a subset of {}".format(VALID_RESOURCES)
+    assert resources <= VALID_RESOURCES, "--include-resources argument should contain a subset of {}".format(list(VALID_RESOURCES))
     return value
 
 

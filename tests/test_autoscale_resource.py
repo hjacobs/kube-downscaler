@@ -164,7 +164,7 @@ def test_set_annotation():
     patch_data = json.loads(api.patch.call_args[1]['data'])
     # ensure the original replicas annotation is send to the server
     assert patch_data == {"metadata": {"name": "foo", "creationTimestamp": "2019-03-15T21:55:00Z",
-                          'annotations': {ORIGINAL_REPLICAS_ANNOTATION: '1'}}, "spec": {"replicas": 0}}
+                                       'annotations': {ORIGINAL_REPLICAS_ANNOTATION: '1'}}, "spec": {"replicas": 0}}
 
 
 def test_downscale_always(resource):

@@ -122,7 +122,7 @@ Available command line options:
     Loop interval (default: 30s)
 ``--namespace``
     Namespace (default: all namespaces)
-``--kind``
+``--include-resources``
     Downscale resources of this kind as comma separated list. [deployments, statefulsets, stacks] (default: deployments)
 ``--grace-period``
     Grace period in seconds for new deployments before scaling them down (default: 15min). The grace period counts from time of creation of the deployment, i.e. updated deployments will immediately be scaled down regardless of the grace period.

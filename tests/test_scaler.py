@@ -28,9 +28,10 @@ def test_scaler_always_up(monkeypatch):
 
     api.get = get
 
-    kinds = frozenset(['statefulset', 'deployment', 'stack'])
-    scale(namespace=None, upscale_period='never', downscale_period='never', default_uptime='always', default_downtime='never', kinds=kinds,
-          exclude_namespaces=[], exclude_deployments=[], exclude_statefulsets=[], dry_run=False, grace_period=300, downtime_replicas=0)
+    include_resources = frozenset(['statefulsets', 'deployments', 'stacks'])
+    scale(namespace=None, upscale_period='never', downscale_period='never', default_uptime='always', default_downtime='never',
+          include_resources=include_resources, exclude_namespaces=[], exclude_deployments=[], exclude_statefulsets=[], dry_run=False, grace_period=300,
+          downtime_replicas=0)
 
     api.patch.assert_not_called()
 
@@ -46,7 +47,7 @@ def test_scaler_namespace_excluded(monkeypatch):
             data = {'items': [
                 {'metadata': {'name': 'sysdep-1', 'namespace': 'system-ns', 'creationTimestamp': '2019-03-01T16:38:00Z'}, 'spec': {'replicas': 1}},
                 {'metadata': {'name': 'deploy-2', 'namespace': 'default', 'creationTimestamp': '2019-03-01T16:38:00Z'}, 'spec': {'replicas': 2}}
-                ]}
+            ]}
         elif url == 'namespaces/default':
             data = {'metadata': {}}
         else:
@@ -58,15 +59,16 @@ def test_scaler_namespace_excluded(monkeypatch):
 
     api.get = get
 
-    kinds = frozenset(['deployment'])
-    scale(namespace=None, upscale_period='never', downscale_period='never', default_uptime='never', default_downtime='always', kinds=kinds,
-          exclude_namespaces=['system-ns'], exclude_deployments=[], exclude_statefulsets=[], dry_run=False, grace_period=300, downtime_replicas=0)
+    include_resources = frozenset(['deployments'])
+    scale(namespace=None, upscale_period='never', downscale_period='never', default_uptime='never', default_downtime='always',
+          include_resources=include_resources, exclude_namespaces=['system-ns'], exclude_deployments=[], exclude_statefulsets=[], dry_run=False,
+          grace_period=300, downtime_replicas=0)
 
     assert api.patch.call_count == 1
 
     # make sure that deploy-2 was updated (namespace of sysdep-1 was excluded)
     patch_data = {"metadata": {"name": "deploy-2", "namespace": "default", "creationTimestamp": "2019-03-01T16:38:00Z",
-                  'annotations': {ORIGINAL_REPLICAS_ANNOTATION: '2'}}, "spec": {"replicas": 0}}
+                               'annotations': {ORIGINAL_REPLICAS_ANNOTATION: '2'}}, "spec": {"replicas": 0}}
     assert api.patch.call_args[1]['url'] == 'deployments/deploy-2'
     assert json.loads(api.patch.call_args[1]['data']) == patch_data
 
@@ -82,7 +84,7 @@ def test_scaler_namespace_excluded_via_annotation(monkeypatch):
             data = {'items': [
                 {'metadata': {'name': 'deploy-1', 'namespace': 'ns-1', 'creationTimestamp': '2019-03-01T16:38:00Z'}, 'spec': {'replicas': 1}},
                 {'metadata': {'name': 'deploy-2', 'namespace': 'ns-2', 'creationTimestamp': '2019-03-01T16:38:00Z'}, 'spec': {'replicas': 2}}
-                ]}
+            ]}
         elif url == 'namespaces/ns-1':
             data = {'metadata': {'annotations': {'downscaler/exclude': 'true'}}}
         elif url == 'namespaces/ns-2':
@@ -96,15 +98,16 @@ def test_scaler_namespace_excluded_via_annotation(monkeypatch):
 
     api.get = get
 
-    kinds = frozenset(['deployment'])
-    scale(namespace=None, upscale_period='never', downscale_period='never', default_uptime='never', default_downtime='always', kinds=kinds,
-          exclude_namespaces=[], exclude_deployments=[], exclude_statefulsets=[], dry_run=False, grace_period=300, downtime_replicas=0)
+    include_resources = frozenset(['deployments'])
+    scale(namespace=None, upscale_period='never', downscale_period='never', default_uptime='never', default_downtime='always',
+          include_resources=include_resources, exclude_namespaces=[], exclude_deployments=[], exclude_statefulsets=[], dry_run=False, grace_period=300,
+          downtime_replicas=0)
 
     assert api.patch.call_count == 1
 
     # make sure that deploy-2 was updated (deploy-1 was excluded via annotation on ns-1)
     patch_data = {"metadata": {"name": "deploy-2", "namespace": "ns-2", "creationTimestamp": "2019-03-01T16:38:00Z",
-                  'annotations': {ORIGINAL_REPLICAS_ANNOTATION: '2'}}, "spec": {"replicas": 0}}
+                               'annotations': {ORIGINAL_REPLICAS_ANNOTATION: '2'}}, "spec": {"replicas": 0}}
     assert api.patch.call_args[1]['url'] == 'deployments/deploy-2'
     assert json.loads(api.patch.call_args[1]['data']) == patch_data
 
@@ -125,7 +128,7 @@ def test_scaler_down_to(monkeypatch):
                         'annotations': {DOWNTIME_REPLICAS_ANNOTATION: SCALE_TO},
                     }, 'spec': {'replicas': 5}
                 },
-                ]}
+            ]}
         elif url == 'namespaces/default':
             data = {'metadata': {}}
         else:
@@ -137,9 +140,10 @@ def test_scaler_down_to(monkeypatch):
 
     api.get = get
 
-    kinds = frozenset(['deployment'])
-    scale(namespace=None, upscale_period='never', downscale_period='never', default_uptime='never', default_downtime='always', kinds=kinds,
-          exclude_namespaces=[], exclude_deployments=[], exclude_statefulsets=[], dry_run=False, grace_period=300, downtime_replicas=0)
+    include_resources = frozenset(['deployments'])
+    scale(namespace=None, upscale_period='never', downscale_period='never', default_uptime='never', default_downtime='always',
+          include_resources=include_resources, exclude_namespaces=[], exclude_deployments=[], exclude_statefulsets=[], dry_run=False, grace_period=300,
+          downtime_replicas=0)
 
     assert api.patch.call_count == 1
     assert api.patch.call_args[1]['url'] == 'deployments/deploy-1'
@@ -166,7 +170,7 @@ def test_scaler_down_to_upscale(monkeypatch):
                         },
                     }, 'spec': {'replicas': SCALE_TO}
                 },
-                ]}
+            ]}
         elif url == 'namespaces/default':
             data = {'metadata': {}}
         else:
@@ -178,9 +182,10 @@ def test_scaler_down_to_upscale(monkeypatch):
 
     api.get = get
 
-    kinds = frozenset(['deployment'])
-    scale(namespace=None, upscale_period='never', downscale_period='never', default_uptime='always', default_downtime='never', kinds=kinds,
-          exclude_namespaces=[], exclude_deployments=[], exclude_statefulsets=[], dry_run=False, grace_period=300, downtime_replicas=0)
+    include_resources = frozenset(['deployments'])
+    scale(namespace=None, upscale_period='never', downscale_period='never', default_uptime='always', default_downtime='never',
+          include_resources=include_resources, exclude_namespaces=[], exclude_deployments=[], exclude_statefulsets=[], dry_run=False, grace_period=300,
+          downtime_replicas=0)
 
     assert api.patch.call_count == 1
     assert api.patch.call_args[1]['url'] == 'deployments/deploy-1'
@@ -207,7 +212,7 @@ def test_scaler_upscale_on_exclude(monkeypatch):
                         }
                     },
                     'spec': {'replicas': 0}},
-                ]}
+            ]}
         elif url == 'namespaces/default':
             data = {'metadata': {}}
         else:
@@ -219,9 +224,10 @@ def test_scaler_upscale_on_exclude(monkeypatch):
 
     api.get = get
 
-    kinds = frozenset(['deployment'])
-    scale(namespace=None, upscale_period='never', downscale_period='never', default_uptime='never', default_downtime='always', kinds=kinds,
-          exclude_namespaces=[], exclude_deployments=[], exclude_statefulsets=[], dry_run=False, grace_period=300, downtime_replicas=0)
+    include_resources = frozenset(['deployments'])
+    scale(namespace=None, upscale_period='never', downscale_period='never', default_uptime='never', default_downtime='always',
+          include_resources=include_resources, exclude_namespaces=[], exclude_deployments=[], exclude_statefulsets=[], dry_run=False, grace_period=300,
+          downtime_replicas=0)
 
     assert api.patch.call_count == 1
     assert api.patch.call_args[1]['url'] == 'deployments/deploy-1'
@@ -247,7 +253,7 @@ def test_scaler_upscale_on_exclude_namespace(monkeypatch):
                         }
                     },
                     'spec': {'replicas': 0}},
-                ]}
+            ]}
         elif url == 'namespaces/default':
             data = {'metadata': {'annotations': {EXCLUDE_ANNOTATION: 'true'}}}
         else:
@@ -259,9 +265,10 @@ def test_scaler_upscale_on_exclude_namespace(monkeypatch):
 
     api.get = get
 
-    kinds = frozenset(['deployment'])
-    scale(namespace=None, upscale_period='never', downscale_period='never', default_uptime='never', default_downtime='always', kinds=kinds,
-          exclude_namespaces=[], exclude_deployments=[], exclude_statefulsets=[], dry_run=False, grace_period=300, downtime_replicas=0)
+    include_resources = frozenset(['deployments'])
+    scale(namespace=None, upscale_period='never', downscale_period='never', default_uptime='never', default_downtime='always',
+          include_resources=include_resources, exclude_namespaces=[], exclude_deployments=[], exclude_statefulsets=[], dry_run=False, grace_period=300,
+          downtime_replicas=0)
 
     assert api.patch.call_count == 1
     assert api.patch.call_args[1]['url'] == 'deployments/deploy-1'
@@ -293,9 +300,10 @@ def test_scaler_always_upscale(monkeypatch):
 
     api.get = get
 
-    kinds = frozenset(['statefulset', 'deployment', 'stack'])
-    scale(namespace=None, upscale_period='always', downscale_period='never', default_uptime='never', default_downtime='always', kinds=kinds,
-          exclude_namespaces=[], exclude_deployments=[], exclude_statefulsets=[], dry_run=False, grace_period=300, downtime_replicas=0)
+    include_resources = frozenset(['statefulsets', 'deployments', 'stacks'])
+    scale(namespace=None, upscale_period='always', downscale_period='never', default_uptime='never', default_downtime='always',
+          include_resources=include_resources, exclude_namespaces=[], exclude_deployments=[], exclude_statefulsets=[], dry_run=False, grace_period=300,
+          downtime_replicas=0)
 
     api.patch.assert_not_called()
 
@@ -315,7 +323,7 @@ def test_scaler_namespace_annotation_replicas(monkeypatch):
                         'name': 'deploy-1', 'namespace': 'default', 'creationTimestamp': '2019-03-01T16:38:00Z',
                     }, 'spec': {'replicas': 5}
                 },
-                ]}
+            ]}
         elif url == 'namespaces/default':
             data = {'metadata': {'annotations': {'downscaler/downtime-replicas': SCALE_TO}}}
             # data = {'metadata': {}}
@@ -328,9 +336,10 @@ def test_scaler_namespace_annotation_replicas(monkeypatch):
 
     api.get = get
 
-    kinds = frozenset(['deployment'])
-    scale(namespace=None, upscale_period='never', downscale_period='never', default_uptime='never', default_downtime='always', kinds=kinds,
-          exclude_namespaces=[], exclude_deployments=[], exclude_statefulsets=[], dry_run=False, grace_period=300, downtime_replicas=0)
+    include_resources = frozenset(['deployments'])
+    scale(namespace=None, upscale_period='never', downscale_period='never', default_uptime='never', default_downtime='always',
+          include_resources=include_resources, exclude_namespaces=[], exclude_deployments=[], exclude_statefulsets=[], dry_run=False, grace_period=300,
+          downtime_replicas=0)
 
     assert api.patch.call_count == 1
     assert api.patch.call_args[1]['url'] == 'deployments/deploy-1'

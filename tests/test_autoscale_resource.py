@@ -229,3 +229,17 @@ def test_downscale_stack_deployment_ignored():
     assert resource.replicas == 1
     resource.update.assert_not_called()
     assert ORIGINAL_REPLICAS_ANNOTATION not in resource.annotations
+
+
+def test_downscale_replicas_not_zero(resource):
+    resource.annotations = {EXCLUDE_ANNOTATION: 'false'}
+    resource.replicas = 3
+    now = datetime.strptime('2018-10-23T21:56:00Z', '%Y-%m-%dT%H:%M:%SZ')
+    resource.metadata = {'creationTimestamp': '2018-10-23T21:55:00Z'}
+    autoscale_resource(resource, 'never', 'never', 'never', 'always', False, False, now, 0, 1)
+    assert resource.replicas == 1
+    assert resource.annotations[ORIGINAL_REPLICAS_ANNOTATION] == '3'
+    autoscale_resource(resource, 'never', 'never', 'never', 'always', False, False, now, 0, 1)
+    assert resource.replicas == 1
+    assert resource.annotations[ORIGINAL_REPLICAS_ANNOTATION] == '3'
+    resource.update.assert_called_once()

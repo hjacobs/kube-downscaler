@@ -98,7 +98,7 @@ def autoscale_resource(resource: pykube.objects.NamespacedAPIObject, upscale_per
                 resource.replicas = int(original_replicas)
                 resource.annotations[ORIGINAL_REPLICAS_ANNOTATION] = None
                 update_needed = True
-            elif not ignore and not is_uptime and replicas > 0:
+            elif not ignore and not is_uptime and replicas > 0 and replicas > int(downtime_replicas):
                 target_replicas = int(resource.annotations.get(DOWNTIME_REPLICAS_ANNOTATION, downtime_replicas))
                 if within_grace_period(resource, grace_period, now):
                     logger.info('%s %s/%s within grace period (%ds), not scaling down (yet)',

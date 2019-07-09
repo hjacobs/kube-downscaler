@@ -58,7 +58,7 @@ def autoscale_resource(resource: pykube.objects.NamespacedAPIObject, upscale_per
     try:
         exclude = namespace_excluded or ignore_resource(resource)
         original_replicas = resource.annotations.get(ORIGINAL_REPLICAS_ANNOTATION)
-        downtime_replicas = resource.annotations.get(DOWNTIME_REPLICAS_ANNOTATION, downtime_replicas)
+        downtime_replicas = int(resource.annotations.get(DOWNTIME_REPLICAS_ANNOTATION, downtime_replicas))
 
         if exclude and not original_replicas:
             logger.debug('%s %s/%s was excluded', resource.kind, resource.namespace, resource.name)
@@ -137,7 +137,7 @@ def autoscale_resources(api, kind, namespace: str,
 
         default_uptime_for_namespace = namespace_obj.annotations.get(UPTIME_ANNOTATION, default_uptime)
         default_downtime_for_namespace = namespace_obj.annotations.get(DOWNTIME_ANNOTATION, default_downtime)
-        default_downtime_replicas_for_namespace = namespace_obj.annotations.get(DOWNTIME_REPLICAS_ANNOTATION, downtime_replicas)
+        default_downtime_replicas_for_namespace = int(namespace_obj.annotations.get(DOWNTIME_REPLICAS_ANNOTATION, downtime_replicas))
         upscale_period_for_namespace = namespace_obj.annotations.get(UPSCALE_PERIOD_ANNOTATION, upscale_period)
         downscale_period_for_namespace = namespace_obj.annotations.get(DOWNSCALE_PERIOD_ANNOTATION, downscale_period)
         forced_uptime_for_namespace = namespace_obj.annotations.get(FORCE_UPTIME_ANNOTATION, forced_uptime)

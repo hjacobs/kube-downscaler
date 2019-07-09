@@ -114,6 +114,18 @@ def test_scale_up(resource):
     resource.update.assert_called_once()
 
 
+def test_scale_up_downtime_replicas_annotation(resource):
+    """Cli argument downtime-replicas is 1, but for 1 specific deployment we want 0.
+    """
+    resource.annotations = {DOWNTIME_REPLICAS_ANNOTATION: '0', ORIGINAL_REPLICAS_ANNOTATION: "1"}
+    resource.replicas = 0
+    now = datetime.strptime('2018-10-23T15:00:00Z', '%Y-%m-%dT%H:%M:%SZ')
+    resource.metadata = {'creationTimestamp': '2018-10-23T21:55:00Z'}
+    autoscale_resource(resource, 'never', 'never', 'Mon-Fri 07:30-20:30 Europe/Berlin', 'never', False, False, now, 0, 1)
+    assert resource.replicas == 1
+    resource.update.assert_called_once()
+
+
 def test_downtime_replicas_annotation_invalid(resource):
     resource.annotations = {DOWNTIME_REPLICAS_ANNOTATION: 'x'}
     resource.replicas = 2

@@ -121,7 +121,7 @@ Available command line options:
 ``--interval``
     Loop interval (default: 30s)
 ``--namespace``
-    Namespace (default: all namespaces)
+    Restrict the downscaler to work only in a single namespace (default: all namespaces). This is mainly useful for deployment scenarios where the deployer of kube-downscaler only has access to a given namespace (instead of cluster access).
 ``--include-resources``
     Downscale resources of this kind as comma separated list. [deployments, statefulsets, stacks] (default: deployments)
 ``--grace-period``

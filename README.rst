@@ -54,6 +54,9 @@ Deploy the downscaler into your cluster via (also works with kind_ or Minikube_)
 
     $ kubectl apply -f deploy/
 
+In case you are deploying ``kube-downscaler`` to another namespace than ``default``, for example if your context is pointing to ``my-namespace``. Make
+sure you change the ``deploy/rbac.yaml`` Service Account configuration ``namespace: default`` to the destination namespace ``my-namespace``, instead of ``default``.
+
 The example configuration uses the ``--dry-run`` as a safety flag to prevent downscaling --- remove it to enable the downscaler, e.g. by editing the deployment:
 
 .. code-block:: bash

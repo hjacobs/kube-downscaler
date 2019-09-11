@@ -7,7 +7,8 @@ from datetime import datetime
 from pykube import Deployment
 from unittest.mock import MagicMock
 
-from kube_downscaler.scaler import autoscale_resource, EXCLUDE_ANNOTATION, ORIGINAL_REPLICAS_ANNOTATION, DOWNTIME_REPLICAS_ANNOTATION
+from kube_downscaler.scaler import autoscale_resource, EXCLUDE_ANNOTATION, ORIGINAL_REPLICAS_ANNOTATION, DOWNTIME_REPLICAS_ANNOTATION, \
+        UPSCALE_PERIOD_ANNOTATION, DOWNSCALE_PERIOD_ANNOTATION
 from kube_downscaler.resources.stack import Stack
 
 
@@ -202,7 +203,7 @@ def test_downscale_period(resource):
 
 
 def test_downscale_period_overlaps(resource):
-    resource.annotations = {DOWNTIME_REPLICAS_ANNOTATION: 'x'}
+    resource.annotations = {DOWNTIME_REPLICAS_ANNOTATION: '1'}
     resource.replicas = 2
     now = datetime.strptime('2018-10-23T21:56:00Z', '%Y-%m-%dT%H:%M:%SZ')
     resource.metadata = {'creationTimestamp': '2018-10-23T21:55:00Z'}
@@ -212,13 +213,53 @@ def test_downscale_period_overlaps(resource):
 
 
 def test_downscale_period_not_match(resource):
-    resource.annotations = {DOWNTIME_REPLICAS_ANNOTATION: 'x'}
+    resource.annotations = {DOWNTIME_REPLICAS_ANNOTATION: '1'}
     resource.replicas = 2
     now = datetime.strptime('2018-10-23T21:56:00Z', '%Y-%m-%dT%H:%M:%SZ')
     resource.metadata = {'creationTimestamp': '2018-10-23T21:55:00Z'}
     autoscale_resource(resource, 'never', 'Mon-Fri 07:30-10:00 Europe/Berlin', 'always', 'never', False, False, now, 0, 0)
     assert resource.replicas == 2
     resource.update.assert_not_called()
+
+
+def test_downscale_period_resource_overrides_never(resource):
+    resource.annotations = {DOWNSCALE_PERIOD_ANNOTATION: 'Mon-Fri 20:30-24:00 Europe/Berlin'}
+    resource.replicas = 1
+    now = datetime.strptime('2018-10-23T21:56:00Z', '%Y-%m-%dT%H:%M:%SZ')
+    resource.metadata = {'creationTimestamp': '2018-10-23T21:55:00Z'}
+    autoscale_resource(resource, 'never', 'never', 'always', 'never', False, False, now, 0, 0)
+    assert resource.replicas == 0
+    resource.update.assert_called_once()
+
+
+def test_downscale_period_resource_overrides_namespace(resource):
+    resource.annotations = {DOWNSCALE_PERIOD_ANNOTATION: 'Mon-Fri 20:30-24:00 Europe/Berlin'}
+    resource.replicas = 1
+    now = datetime.strptime('2018-10-23T21:56:00Z', '%Y-%m-%dT%H:%M:%SZ')
+    resource.metadata = {'creationTimestamp': '2018-10-23T21:55:00Z'}
+    autoscale_resource(resource, 'never', 'Mon-Fri 22:00-24:00 Europe/Berlin', 'always', 'never', False, False, now, 0, 0)
+    assert resource.replicas == 0
+    resource.update.assert_called_once()
+
+
+def test_upscale_period_resource_overrides_never(resource):
+    resource.annotations = {UPSCALE_PERIOD_ANNOTATION: 'Mon-Fri 20:30-24:00 Europe/Berlin', ORIGINAL_REPLICAS_ANNOTATION: 1}
+    resource.replicas = 0
+    now = datetime.strptime('2018-10-23T21:56:00Z', '%Y-%m-%dT%H:%M:%SZ')
+    resource.metadata = {'creationTimestamp': '2018-10-23T21:55:00Z'}
+    autoscale_resource(resource, 'never', 'never', 'always', 'never', False, False, now, 0, 0)
+    assert resource.replicas == 1
+    resource.upd
+
+
+def test_upscale_period_resource_overrides_namespace(resource):
+    resource.annotations = {UPSCALE_PERIOD_ANNOTATION: 'Mon-Fri 20:30-24:00 Europe/Berlin', ORIGINAL_REPLICAS_ANNOTATION: 1}
+    resource.replicas = 0
+    now = datetime.strptime('2018-10-23T21:56:00Z', '%Y-%m-%dT%H:%M:%SZ')
+    resource.metadata = {'creationTimestamp': '2018-10-23T21:55:00Z'}
+    autoscale_resource(resource, 'Mon-Fri 22:00-24:00 Europe/Berlin', 'never', 'always', 'never', False, False, now, 0, 0)
+    assert resource.replicas == 1
+    resource.upd
 
 
 def test_downscale_stack_deployment_ignored():

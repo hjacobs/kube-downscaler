@@ -66,13 +66,15 @@ def autoscale_resource(resource: pykube.objects.NamespacedAPIObject, upscale_per
             replicas = resource.replicas
             ignore = False
 
+            upscale_period = resource.annotations.get(UPSCALE_PERIOD_ANNOTATION, upscale_period)
+            downscale_period = resource.annotations.get(DOWNSCALE_PERIOD_ANNOTATION, downscale_period)
             if forced_uptime or (exclude and original_replicas):
                 uptime = "forced"
                 downtime = "ignored"
                 is_uptime = True
             elif upscale_period != 'never' or downscale_period != 'never':
-                uptime = resource.annotations.get(UPSCALE_PERIOD_ANNOTATION, upscale_period)
-                downtime = resource.annotations.get(DOWNSCALE_PERIOD_ANNOTATION, downscale_period)
+                uptime = upscale_period
+                downtime = downscale_period
                 if helper.matches_time_spec(now, uptime) and helper.matches_time_spec(now, downtime):
                     logger.debug('Upscale and downscale periods overlap, do nothing')
                     ignore = True
@@ -82,6 +84,7 @@ def autoscale_resource(resource: pykube.objects.NamespacedAPIObject, upscale_per
                     is_uptime = False
                 else:
                     ignore = True
+                logger.debug('Periods checked: upscale=%s, downscale=%s, ignore=%s, is_uptime=%s', upscale_period, downscale_period, ignore, is_uptime)
             else:
                 uptime = resource.annotations.get(UPTIME_ANNOTATION, default_uptime)
                 downtime = resource.annotations.get(DOWNTIME_ANNOTATION, default_downtime)

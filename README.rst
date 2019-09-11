@@ -14,6 +14,10 @@ Kubernetes Downscaler
    :target: https://hub.docker.com/r/hjacobs/kube-downscaler
    :alt: Docker pulls
 
+.. image:: https://img.shields.io/badge/calver-YY.MM.MICRO-22bfda.svg
+   :target: http://calver.org/
+   :alt: CalVer
+
 Scale down Kubernetes deployments and/or statefulsets during non-work hours.
 
 Deployments are interchangeable by statefulset for this whole guide.

@@ -19,7 +19,7 @@ DOWNTIME_REPLICAS_ANNOTATION = 'downscaler/downtime-replicas'
 
 
 def within_grace_period(deploy, grace_period: int, now: datetime.datetime):
-    creation_time = datetime.datetime.strptime(deploy.metadata['creationTimestamp'], '%Y-%m-%dT%H:%M:%SZ')
+    creation_time = datetime.datetime.strptime(deploy.metadata['creationTimestamp'], '%Y-%m-%dT%H:%M:%SZ').replace(tzinfo=datetime.timezone.utc)
     delta = now - creation_time
     return delta.total_seconds() <= grace_period
 
@@ -159,7 +159,7 @@ def scale(namespace: str, upscale_period: str, downscale_period: str,
           downtime_replicas: int):
     api = helper.get_kube_api()
 
-    now = datetime.datetime.utcnow()
+    now = datetime.datetime.now(datetime.timezone.utc)
     forced_uptime = pods_force_uptime(api, namespace)
 
     if 'deployments' in include_resources:

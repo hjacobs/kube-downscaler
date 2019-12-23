@@ -1,4 +1,4 @@
-dist: xenial
+dist: bionic
 sudo: yes
 language: python
 python:
@@ -6,11 +6,8 @@ python:
 services:
   - docker
 install:
-  - pip install pipenv
-  - pipenv install --dev
+  - pip install poetry
 script:
   - make test docker
 after_success:
   - coveralls
-env:
-  PIPENV_IGNORE_VIRTUALENVS=1

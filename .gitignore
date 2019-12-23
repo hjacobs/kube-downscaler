@@ -11,3 +11,4 @@ scm-source.json
 *.bak
 htmlcov/
 .pytest_cache/
+.mypy_cache

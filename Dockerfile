@@ -1,23 +1,27 @@
-FROM python:3.7-alpine3.10
-MAINTAINER Henning Jacobs <henning@jacobs1.de>
+FROM python:3.8-slim
 
 WORKDIR /
 
-COPY Pipfile.lock /
-COPY pipenv-install.py /
+RUN pip3 install poetry
 
-RUN /pipenv-install.py && \
-  rm -fr /usr/local/lib/python3.7/site-packages/pip && \
-  rm -fr /usr/local/lib/python3.7/site-packages/setuptools
+COPY poetry.lock /
+COPY pyproject.toml /
 
-FROM python:3.7-alpine3.10
+RUN poetry config virtualenvs.create false && \
+    poetry install --no-interaction --no-dev --no-ansi
+
+FROM python:3.8-slim
 
 WORKDIR /
 
-COPY --from=0 /usr/local/lib/python3.7/site-packages /usr/local/lib/python3.7/site-packages
+# copy pre-built packages to this image
+COPY --from=0 /usr/local/lib/python3.8/site-packages /usr/local/lib/python3.8/site-packages
+
+# now copy the actual code we will execute (poetry install above was just for dependencies)
 COPY kube_downscaler /kube_downscaler
 
 ARG VERSION=dev
+
 RUN sed -i "s/__version__ = .*/__version__ = '${VERSION}'/" /kube_downscaler/__init__.py
 
 ENTRYPOINT ["python3", "-m", "kube_downscaler"]

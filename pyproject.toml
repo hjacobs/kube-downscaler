@@ -1,0 +1,20 @@
+[tool]
+[tool.poetry]
+name = "kube-downscaler"
+version = "2019.1.1dev0"
+description = "Scale down Kubernetes deployments after work hours"
+authors = ["Henning Jacobs <henning@jacobs1.de>"]
+
+[tool.poetry.dependencies]
+python = ">=3.7"
+pykube-ng = "*"
+pytz = "*"
+
+[tool.poetry.dev-dependencies]
+coverage = "*"
+coveralls = "*"
+flake8 = "*"
+pytest = "*"
+pytest-cov = "*"
+black = "^19.10b0"
+mypy = "^0.761"

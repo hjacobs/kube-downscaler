@@ -5,22 +5,28 @@ import pykube
 import pytz
 import re
 
-WEEKDAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']
+WEEKDAYS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]
 
-TIME_SPEC_PATTERN = re.compile(r'^([a-zA-Z]{3})-([a-zA-Z]{3}) (\d\d):(\d\d)-(\d\d):(\d\d) (?P<tz>[a-zA-Z/_]+)$')
-_ISO_8601_TIME_SPEC_PATTERN = r'(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[-+]\d{2}:\d{2})'
-ABSOLUTE_TIME_SPEC_PATTERN = re.compile(r'^{0}-{0}$'.format(_ISO_8601_TIME_SPEC_PATTERN))
+TIME_SPEC_PATTERN = re.compile(
+    r"^([a-zA-Z]{3})-([a-zA-Z]{3}) (\d\d):(\d\d)-(\d\d):(\d\d) (?P<tz>[a-zA-Z/_]+)$"
+)
+_ISO_8601_TIME_SPEC_PATTERN = r"(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}[-+]\d{2}:\d{2})"
+ABSOLUTE_TIME_SPEC_PATTERN = re.compile(
+    r"^{0}-{0}$".format(_ISO_8601_TIME_SPEC_PATTERN)
+)
 
 
 def matches_time_spec(time: datetime.datetime, spec: str):
-    if spec.lower() == 'always':
+    if spec.lower() == "always":
         return True
-    elif spec.lower() == 'never':
+    elif spec.lower() == "never":
         return False
-    for spec_ in spec.split(','):
+    for spec_ in spec.split(","):
         spec_ = spec_.strip()
         recurring_match = TIME_SPEC_PATTERN.match(spec_)
-        if recurring_match is not None and _matches_recurring_time_spec(time, recurring_match):
+        if recurring_match is not None and _matches_recurring_time_spec(
+            time, recurring_match
+        ):
             return True
         absolute_match = ABSOLUTE_TIME_SPEC_PATTERN.match(spec_)
         if absolute_match and _matches_absolute_time_spec(time, absolute_match):
@@ -28,12 +34,13 @@ def matches_time_spec(time: datetime.datetime, spec: str):
         if not recurring_match and not absolute_match:
             raise ValueError(
                 f'Time spec value "{spec}" does not match format ("Mon-Fri 06:30-20:30 Europe/Berlin" or'
-                + '"2019-01-01T00:00:00+00:00-2019-01-02T12:34:56+00:00")')
+                + '"2019-01-01T00:00:00+00:00-2019-01-02T12:34:56+00:00")'
+            )
     return False
 
 
 def _matches_recurring_time_spec(time: datetime.datetime, match: re.Match):
-    tz = pytz.timezone(match.group('tz'))
+    tz = pytz.timezone(match.group("tz"))
     local_time = tz.fromutc(time.replace(tzinfo=tz))
     day_from = WEEKDAYS.index(match.group(1).upper())
     day_to = WEEKDAYS.index(match.group(2).upper())
@@ -56,6 +63,6 @@ def get_kube_api():
         config = pykube.KubeConfig.from_service_account()
     except FileNotFoundError:
         # local testing
-        config = pykube.KubeConfig.from_file(os.getenv('KUBECONFIG', '~/.kube/config'))
+        config = pykube.KubeConfig.from_file(os.getenv("KUBECONFIG", "~/.kube/config"))
     api = pykube.HTTPClient(config)
     return api

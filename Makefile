@@ -6,7 +6,7 @@ TAG              ?= $(VERSION)
 
 default: docker
 
-.PHONY:
+.PHONY: install
 install:
 	poetry install
 

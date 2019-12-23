@@ -6,7 +6,11 @@ TAG              ?= $(VERSION)
 
 default: docker
 
-test:
+.PHONY:
+install:
+	poetry install
+
+test: install
 	poetry run flake8
 	poetry run black --check kube_downscaler
 	poetry run mypy --ignore-missing-imports kube_downscaler

@@ -2,7 +2,7 @@ import os
 
 import argparse
 
-VALID_RESOURCES = frozenset(["deployments", "statefulsets", "stacks"])
+VALID_RESOURCES = frozenset(["deployments", "statefulsets", "stacks", "cronjobs"])
 
 
 def check_include_resources(value):
@@ -79,6 +79,11 @@ def get_parser():
         "--exclude-statefulsets",
         help="Exclude specific statefulsets from downscaling",
         default=os.getenv("EXCLUDE_STATEFULSETS", ""),
+    )
+    parser.add_argument(
+        "--exclude-cronjobs",
+        help="Exclude specific cronjobs from downscaling",
+        default=os.getenv("EXCLUDE_CRONJOBS", ""),
     )
     parser.add_argument(
         "--downtime-replicas",

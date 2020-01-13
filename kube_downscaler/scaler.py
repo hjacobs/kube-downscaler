@@ -4,7 +4,7 @@ import pykube
 from typing import FrozenSet
 
 from kube_downscaler import helper
-from pykube import Deployment, StatefulSet
+from pykube import Deployment, StatefulSet, CronJob
 from kube_downscaler.resources.stack import Stack
 
 logger = logging.getLogger(__name__)
@@ -85,7 +85,6 @@ def autoscale_resource(
                 resource.name,
             )
         else:
-            replicas = resource.replicas
             ignore = False
 
             upscale_period = resource.annotations.get(
@@ -128,15 +127,29 @@ def autoscale_resource(
                     now, uptime
                 ) and not helper.matches_time_spec(now, downtime)
 
-            logger.debug(
-                "%s %s/%s has %s replicas (original: %s, uptime: %s)",
-                resource.kind,
-                resource.namespace,
-                resource.name,
-                replicas,
-                original_replicas,
-                uptime,
-            )
+            if resource.kind == "CronJob":
+                suspended = resource.obj["spec"]["suspend"]
+                replicas = 0 if suspended else 1
+                logger.debug(
+                    "%s %s/%s is %s (original: %s, uptime: %s)",
+                    resource.kind,
+                    resource.namespace,
+                    resource.name,
+                    "suspended" if suspended else "not suspended",
+                    "suspended" if original_replicas == 0 else "not suspended",
+                    uptime,
+                )
+            else:
+                replicas = resource.replicas
+                logger.debug(
+                    "%s %s/%s has %s replicas (original: %s, uptime: %s)",
+                    resource.kind,
+                    resource.namespace,
+                    resource.name,
+                    replicas,
+                    original_replicas,
+                    uptime,
+                )
             update_needed = False
 
             if (
@@ -146,17 +159,30 @@ def autoscale_resource(
                 and original_replicas
                 and int(original_replicas) > 0
             ):
-                logger.info(
-                    "Scaling up %s %s/%s from %s to %s replicas (uptime: %s, downtime: %s)",
-                    resource.kind,
-                    resource.namespace,
-                    resource.name,
-                    replicas,
-                    original_replicas,
-                    uptime,
-                    downtime,
-                )
-                resource.replicas = int(original_replicas)
+
+                if resource.kind == "CronJob":
+                    resource.obj["spec"]["suspend"] = False
+                    resource.obj["spec"]["startingDeadlineSeconds"] = 0
+                    logger.info(
+                        "Unsuspending %s %s/%s (uptime: %s, downtime: %s)",
+                        resource.kind,
+                        resource.namespace,
+                        resource.name,
+                        uptime,
+                        downtime,
+                    )
+                else:
+                    resource.replicas = int(original_replicas)
+                    logger.info(
+                        "Scaling up %s %s/%s from %s to %s replicas (uptime: %s, downtime: %s)",
+                        resource.kind,
+                        resource.namespace,
+                        resource.name,
+                        replicas,
+                        original_replicas,
+                        uptime,
+                        downtime,
+                    )
                 resource.annotations[ORIGINAL_REPLICAS_ANNOTATION] = None
                 update_needed = True
             elif (
@@ -180,18 +206,29 @@ def autoscale_resource(
                     )
                 else:
 
-                    logger.info(
-                        "Scaling down %s %s/%s from %s to %s replicas (uptime: %s, downtime: %s)",
-                        resource.kind,
-                        resource.namespace,
-                        resource.name,
-                        replicas,
-                        target_replicas,
-                        uptime,
-                        downtime,
-                    )
+                    if resource.kind == "CronJob":
+                        resource.obj["spec"]["suspend"] = True
+                        logger.info(
+                            "Suspending %s %s/%s (uptime: %s, downtime: %s)",
+                            resource.kind,
+                            resource.namespace,
+                            resource.name,
+                            uptime,
+                            downtime,
+                        )
+                    else:
+                        resource.replicas = target_replicas
+                        logger.info(
+                            "Scaling down %s %s/%s from %s to %s replicas (uptime: %s, downtime: %s)",
+                            resource.kind,
+                            resource.namespace,
+                            resource.name,
+                            replicas,
+                            target_replicas,
+                            uptime,
+                            downtime,
+                        )
                     resource.annotations[ORIGINAL_REPLICAS_ANNOTATION] = str(replicas)
-                    resource.replicas = target_replicas
                     update_needed = True
             if update_needed:
                 if dry_run:
@@ -292,6 +329,7 @@ def scale(
     exclude_namespaces: FrozenSet[str],
     exclude_deployments: FrozenSet[str],
     exclude_statefulsets: FrozenSet[str],
+    exclude_cronjobs: FrozenSet[str],
     dry_run: bool,
     grace_period: int,
     downtime_replicas: int,
@@ -342,6 +380,23 @@ def scale(
             namespace,
             exclude_namespaces,
             exclude_statefulsets,
+            upscale_period,
+            downscale_period,
+            default_uptime,
+            default_downtime,
+            forced_uptime,
+            dry_run,
+            now,
+            grace_period,
+            downtime_replicas,
+        )
+    if "cronjobs" in include_resources:
+        autoscale_resources(
+            api,
+            CronJob,
+            namespace,
+            exclude_namespaces,
+            exclude_cronjobs,
             upscale_period,
             downscale_period,
             default_uptime,

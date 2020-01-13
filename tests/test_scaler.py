@@ -31,6 +31,8 @@ def test_scaler_always_up(monkeypatch):
             data = {"items": []}
         elif url == "stacks":
             data = {"items": []}
+        elif url == "cronjobs":
+            data = {"items": []}
         elif url == "namespaces/ns-1":
             data = {"metadata": {}}
         else:
@@ -42,7 +44,7 @@ def test_scaler_always_up(monkeypatch):
 
     api.get = get
 
-    include_resources = frozenset(["statefulsets", "deployments", "stacks"])
+    include_resources = frozenset(["statefulsets", "deployments", "stacks", "cronjobs"])
     scale(
         namespace=None,
         upscale_period="never",
@@ -53,6 +55,7 @@ def test_scaler_always_up(monkeypatch):
         exclude_namespaces=[],
         exclude_deployments=[],
         exclude_statefulsets=[],
+        exclude_cronjobs=[],
         dry_run=False,
         grace_period=300,
         downtime_replicas=0,
@@ -113,6 +116,7 @@ def test_scaler_namespace_excluded(monkeypatch):
         exclude_namespaces=["system-ns"],
         exclude_deployments=[],
         exclude_statefulsets=[],
+        exclude_cronjobs=[],
         dry_run=False,
         grace_period=300,
         downtime_replicas=0,
@@ -188,6 +192,7 @@ def test_scaler_namespace_excluded_via_annotation(monkeypatch):
         exclude_namespaces=[],
         exclude_deployments=[],
         exclude_statefulsets=[],
+        exclude_cronjobs=[],
         dry_run=False,
         grace_period=300,
         downtime_replicas=0,
@@ -255,6 +260,7 @@ def test_scaler_down_to(monkeypatch):
         exclude_namespaces=[],
         exclude_deployments=[],
         exclude_statefulsets=[],
+        exclude_cronjobs=[],
         dry_run=False,
         grace_period=300,
         downtime_replicas=0,
@@ -315,6 +321,7 @@ def test_scaler_down_to_upscale(monkeypatch):
         exclude_namespaces=[],
         exclude_deployments=[],
         exclude_statefulsets=[],
+        exclude_cronjobs=[],
         dry_run=False,
         grace_period=300,
         downtime_replicas=0,
@@ -376,6 +383,7 @@ def test_scaler_upscale_on_exclude(monkeypatch):
         exclude_namespaces=[],
         exclude_deployments=[],
         exclude_statefulsets=[],
+        exclude_cronjobs=[],
         dry_run=False,
         grace_period=300,
         downtime_replicas=0,
@@ -439,6 +447,7 @@ def test_scaler_upscale_on_exclude_namespace(monkeypatch):
         exclude_namespaces=[],
         exclude_deployments=[],
         exclude_statefulsets=[],
+        exclude_cronjobs=[],
         dry_run=False,
         grace_period=300,
         downtime_replicas=0,
@@ -499,6 +508,7 @@ def test_scaler_always_upscale(monkeypatch):
         exclude_namespaces=[],
         exclude_deployments=[],
         exclude_statefulsets=[],
+        exclude_cronjobs=[],
         dry_run=False,
         grace_period=300,
         downtime_replicas=0,
@@ -555,6 +565,7 @@ def test_scaler_namespace_annotation_replicas(monkeypatch):
         exclude_namespaces=[],
         exclude_deployments=[],
         exclude_statefulsets=[],
+        exclude_cronjobs=[],
         dry_run=False,
         grace_period=300,
         downtime_replicas=0,
@@ -563,3 +574,146 @@ def test_scaler_namespace_annotation_replicas(monkeypatch):
     assert api.patch.call_count == 1
     assert api.patch.call_args[1]["url"] == "deployments/deploy-1"
     assert json.loads(api.patch.call_args[1]["data"])["spec"]["replicas"] == SCALE_TO
+
+
+def test_scaler_cronjob_suspend(monkeypatch):
+    api = MagicMock()
+    monkeypatch.setattr(
+        "kube_downscaler.scaler.helper.get_kube_api", MagicMock(return_value=api)
+    )
+
+    def get(url, version, **kwargs):
+        if url == "pods":
+            data = {"items": []}
+        elif url == "cronjobs":
+            data = {
+                "items": [
+                    {
+                        "metadata": {
+                            "name": "cronjob-1",
+                            "namespace": "default",
+                            "creationTimestamp": "2019-03-01T16:38:00Z",
+                        },
+                        "spec": {"suspend": False},
+                    },
+                ]
+            }
+        elif url == "namespaces/default":
+            data = {
+                "metadata": {"annotations": {"downscaler/uptime": "never"}}
+            }
+            # data = {'metadata': {}}
+        else:
+            raise Exception(f"unexpected call: {url}, {version}, {kwargs}")
+
+        response = MagicMock()
+        response.json.return_value = data
+        return response
+
+    api.get = get
+
+    include_resources = frozenset(["cronjobs"])
+    scale(
+        namespace=None,
+        upscale_period="never",
+        downscale_period="never",
+        default_uptime="never",
+        default_downtime="always",
+        include_resources=include_resources,
+        exclude_namespaces=[],
+        exclude_deployments=[],
+        exclude_statefulsets=[],
+        exclude_cronjobs=[],
+        dry_run=False,
+        grace_period=300,
+        downtime_replicas=0,
+    )
+
+    assert api.patch.call_count == 1
+    assert api.patch.call_args[1]["url"] == "cronjobs/cronjob-1"
+
+    patch_data = {
+        "metadata": {
+            "name": "cronjob-1",
+            "namespace": "default",
+            "creationTimestamp": "2019-03-01T16:38:00Z",
+            "annotations": {ORIGINAL_REPLICAS_ANNOTATION: "1"},
+        },
+        "spec": {"suspend": True},
+    }
+    assert json.loads(api.patch.call_args[1]["data"]) == patch_data
+
+
+def test_scaler_cronjob_unsuspend(monkeypatch):
+    api = MagicMock()
+    monkeypatch.setattr(
+        "kube_downscaler.scaler.helper.get_kube_api", MagicMock(return_value=api)
+    )
+
+    def get(url, version, **kwargs):
+        if url == "pods":
+            data = {"items": []}
+        elif url == "cronjobs":
+            data = {
+                "items": [
+                    {
+                        "metadata": {
+                            "name": "cronjob-1",
+                            "namespace": "default",
+                            "creationTimestamp": "2019-03-01T16:38:00Z",
+                            "annotations": {ORIGINAL_REPLICAS_ANNOTATION: "1"},
+                        },
+                        "spec": {"suspend": True},
+                    },
+                ]
+            }
+        elif url == "namespaces/default":
+            data = {
+                "metadata": {"annotations": {
+                    "downscaler/uptime": "always",
+                    "downscaler/downtime": "never"
+                }}
+            }
+            # data = {'metadata': {}}
+        else:
+            raise Exception(f"unexpected call: {url}, {version}, {kwargs}")
+
+        response = MagicMock()
+        response.json.return_value = data
+        return response
+
+    api.get = get
+
+    include_resources = frozenset(["cronjobs"])
+    scale(
+        namespace=None,
+        upscale_period="never",
+        downscale_period="never",
+        default_uptime="never",
+        default_downtime="always",
+        include_resources=include_resources,
+        exclude_namespaces=[],
+        exclude_deployments=[],
+        exclude_statefulsets=[],
+        exclude_cronjobs=[],
+        dry_run=False,
+        grace_period=300,
+        downtime_replicas=0,
+    )
+
+    assert api.patch.call_count == 1
+    assert api.patch.call_args[1]["url"] == "cronjobs/cronjob-1"
+
+    patch_data = {
+        "metadata": {
+            "name": "cronjob-1",
+            "namespace": "default",
+            "creationTimestamp": "2019-03-01T16:38:00Z",
+            "annotations": {ORIGINAL_REPLICAS_ANNOTATION: None},
+        },
+        "spec": {
+            "suspend": False,
+            "startingDeadlineSeconds": 0,
+        },
+    }
+    assert json.loads(api.patch.call_args[1]["data"]) == patch_data

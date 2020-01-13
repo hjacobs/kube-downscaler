@@ -1,6 +1,8 @@
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock
+from unittest.mock import patch
 
-from kube_downscaler.scaler import pods_force_uptime, FORCE_UPTIME_ANNOTATION
+from kube_downscaler.scaler import FORCE_UPTIME_ANNOTATION
+from kube_downscaler.scaler import pods_force_uptime
 
 
 @patch("pykube.Pod")

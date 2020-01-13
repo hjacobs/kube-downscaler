@@ -1,9 +1,10 @@
-import os
-
 import datetime
+import os
+import re
+from typing import Match
+
 import pykube
 import pytz
-import re
 
 WEEKDAYS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]
 
@@ -39,7 +40,7 @@ def matches_time_spec(time: datetime.datetime, spec: str):
     return False
 
 
-def _matches_recurring_time_spec(time: datetime.datetime, match: re.Match):
+def _matches_recurring_time_spec(time: datetime.datetime, match: Match):
     tz = pytz.timezone(match.group("tz"))
     local_time = tz.fromutc(time.replace(tzinfo=tz))
     day_from = WEEKDAYS.index(match.group(1).upper())
@@ -52,7 +53,7 @@ def _matches_recurring_time_spec(time: datetime.datetime, match: re.Match):
     return day_matches and time_matches
 
 
-def _matches_absolute_time_spec(time: datetime.datetime, match: re.Match):
+def _matches_absolute_time_spec(time: datetime.datetime, match: Match):
     time_from = datetime.datetime.fromisoformat(match.group(1))
     time_to = datetime.datetime.fromisoformat(match.group(2))
     return time_from <= time <= time_to

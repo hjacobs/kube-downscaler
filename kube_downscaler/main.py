@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-
+import logging
 import time
 
-import logging
-
-from kube_downscaler import __version__, cmd, shutdown
+from kube_downscaler import __version__
+from kube_downscaler import cmd
+from kube_downscaler import shutdown
 from kube_downscaler.scaler import scale
 
 logger = logging.getLogger("downscaler")

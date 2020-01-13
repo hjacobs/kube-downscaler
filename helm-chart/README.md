@@ -17,7 +17,7 @@ The diagram below depicts how a Kube-downscaler agent control applications.
 ![Alt text](images/architecture.png?raw=true "Kube Kube-downscaler diagram")
 
 ## Quick Start
-Below are instructions to quickly install and configure Kube-downscaler.  
+Below are instructions to quickly install and configure Kube-downscaler.
 
 ### Installing Kube-downscaler
 
@@ -66,7 +66,7 @@ kubectl get events -w
 
 
 ### Deploying sample applications using Kube-downscaler
-In this tutorial we will show how to deploy Kube-downscaler and test with sample Flask application. 
+In this tutorial we will show how to deploy Kube-downscaler and test with sample Flask application.
 
 1. Deploy Flask applications:
 ```

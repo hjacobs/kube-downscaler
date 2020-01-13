@@ -1,7 +1,6 @@
-import sys
-
 import contextlib
 import signal
+import sys
 
 
 class GracefulShutdown:

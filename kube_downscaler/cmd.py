@@ -1,6 +1,5 @@
-import os
-
 import argparse
+import os
 
 VALID_RESOURCES = frozenset(["deployments", "statefulsets", "stacks", "cronjobs"])
 

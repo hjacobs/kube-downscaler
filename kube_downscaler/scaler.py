@@ -1,10 +1,13 @@
 import datetime
 import logging
-import pykube
 from typing import FrozenSet
 
+import pykube
+from pykube import CronJob
+from pykube import Deployment
+from pykube import StatefulSet
+
 from kube_downscaler import helper
-from pykube import Deployment, StatefulSet, CronJob
 from kube_downscaler.resources.stack import Stack
 
 logger = logging.getLogger(__name__)
@@ -27,7 +30,7 @@ def within_grace_period(deploy, grace_period: int, now: datetime.datetime):
 
 
 def pods_force_uptime(api, namespace: str):
-    """Returns True if there are any running pods which require the deployments to be scaled back up"""
+    """Return True if there are any running pods which require the deployments to be scaled back up."""
     for pod in pykube.Pod.objects(api).filter(namespace=(namespace or pykube.all)):
         if pod.obj.get("status", {}).get("phase") in ("Succeeded", "Failed"):
             continue

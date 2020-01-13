@@ -1,5 +1,9 @@
-from datetime import datetime, timedelta, timezone
+from datetime import datetime
+from datetime import timedelta
+from datetime import timezone
+
 from pykube import Deployment
+
 from kube_downscaler.scaler import within_grace_period
 
 

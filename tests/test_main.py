@@ -1,8 +1,7 @@
-import pytest
-
 import os.path
-
 from unittest.mock import MagicMock
+
+import pytest
 
 from kube_downscaler.main import main
 

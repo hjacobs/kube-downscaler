@@ -1,21 +1,20 @@
 import json
-import pykube
-import pytest
 import logging
-
-from datetime import datetime, timezone
-from pykube import Deployment
+from datetime import datetime
+from datetime import timezone
 from unittest.mock import MagicMock
 
-from kube_downscaler.scaler import (
-    autoscale_resource,
-    EXCLUDE_ANNOTATION,
-    ORIGINAL_REPLICAS_ANNOTATION,
-    DOWNTIME_REPLICAS_ANNOTATION,
-    UPSCALE_PERIOD_ANNOTATION,
-    DOWNSCALE_PERIOD_ANNOTATION,
-)
+import pykube
+import pytest
+from pykube import Deployment
+
 from kube_downscaler.resources.stack import Stack
+from kube_downscaler.scaler import autoscale_resource
+from kube_downscaler.scaler import DOWNSCALE_PERIOD_ANNOTATION
+from kube_downscaler.scaler import DOWNTIME_REPLICAS_ANNOTATION
+from kube_downscaler.scaler import EXCLUDE_ANNOTATION
+from kube_downscaler.scaler import ORIGINAL_REPLICAS_ANNOTATION
+from kube_downscaler.scaler import UPSCALE_PERIOD_ANNOTATION
 
 
 @pytest.fixture
@@ -200,8 +199,7 @@ def test_scale_up(resource):
 
 
 def test_scale_up_downtime_replicas_annotation(resource):
-    """Cli argument downtime-replicas is 1, but for 1 specific deployment we want 0.
-    """
+    """Cli argument downtime-replicas is 1, but for 1 specific deployment we want 0."""
     resource.annotations = {
         DOWNTIME_REPLICAS_ANNOTATION: "0",
         ORIGINAL_REPLICAS_ANNOTATION: "1",

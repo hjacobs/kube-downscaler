@@ -1,8 +1,9 @@
 from unittest.mock import MagicMock
 
+from pykube import Deployment
+from pykube import StatefulSet
 from pykube.objects import NamespacedAPIObject
 
-from pykube import Deployment, StatefulSet
 from kube_downscaler.resources.stack import Stack
 
 

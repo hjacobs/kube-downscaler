@@ -1,12 +1,10 @@
 import json
 from unittest.mock import MagicMock
 
-from kube_downscaler.scaler import (
-    scale,
-    ORIGINAL_REPLICAS_ANNOTATION,
-    EXCLUDE_ANNOTATION,
-    DOWNTIME_REPLICAS_ANNOTATION,
-)
+from kube_downscaler.scaler import DOWNTIME_REPLICAS_ANNOTATION
+from kube_downscaler.scaler import EXCLUDE_ANNOTATION
+from kube_downscaler.scaler import ORIGINAL_REPLICAS_ANNOTATION
+from kube_downscaler.scaler import scale
 
 
 def test_scaler_always_up(monkeypatch):
@@ -599,9 +597,7 @@ def test_scaler_cronjob_suspend(monkeypatch):
                 ]
             }
         elif url == "namespaces/default":
-            data = {
-                "metadata": {"annotations": {"downscaler/uptime": "never"}}
-            }
+            data = {"metadata": {"annotations": {"downscaler/uptime": "never"}}}
             # data = {'metadata': {}}
         else:
             raise Exception(f"unexpected call: {url}, {version}, {kwargs}")
@@ -669,10 +665,12 @@ def test_scaler_cronjob_unsuspend(monkeypatch):
             }
         elif url == "namespaces/default":
             data = {
-                "metadata": {"annotations": {
-                    "downscaler/uptime": "always",
-                    "downscaler/downtime": "never"
-                }}
+                "metadata": {
+                    "annotations": {
+                        "downscaler/uptime": "always",
+                        "downscaler/downtime": "never",
+                    }
+                }
             }
             # data = {'metadata': {}}
         else:
@@ -711,9 +709,6 @@ def test_scaler_cronjob_unsuspend(monkeypatch):
             "creationTimestamp": "2019-03-01T16:38:00Z",
             "annotations": {ORIGINAL_REPLICAS_ANNOTATION: None},
         },
-        "spec": {
-            "suspend": False,
-            "startingDeadlineSeconds": 0,
-        },
+        "spec": {"suspend": False, "startingDeadlineSeconds": 0},
     }
     assert json.loads(api.patch.call_args[1]["data"]) == patch_data

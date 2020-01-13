@@ -1,6 +1,8 @@
+from datetime import datetime
+from datetime import timezone
+
 import pytest
 
-from datetime import datetime, timezone
 from kube_downscaler.helper import matches_time_spec
 
 

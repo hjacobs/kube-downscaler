@@ -17,6 +17,12 @@ repos:
     hooks:
       - id: reorder-python-imports
 
+  - repo: https://codeberg.org/hjacobs/kube-manifest-lint
+    rev: 0.1.3
+    hooks:
+      - id: kube-manifest-lint
+        exclude: ^helm-chart/templates/.*$
+
   - repo: https://github.com/ambv/black
     rev: 19.10b0
     hooks:

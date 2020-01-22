@@ -12,6 +12,8 @@ debug:
 # namespace:
   ## Deployment will query all namespaces if left empty:
 #  active_in:
+  ## Deployment exclude these namespaces:
+#  inactive_in:
 ## How frequently kube-downscaler should query applications uptime, unit is in seconds.
 
 ## Default is 1 minute.

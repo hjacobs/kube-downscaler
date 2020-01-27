@@ -1,7 +1,4 @@
----
 minimum_pre_commit_version: 1.21.0
-fail_fast: false
-default_stages: [commit, push]
 repos:
   # meta
 
@@ -10,8 +7,13 @@ repos:
       - id: check-hooks-apply
       - id: check-useless-excludes
 
-  # formatters
+  - repo: https://codeberg.org/hjacobs/kube-manifest-lint
+    rev: 0.2.0
+    hooks:
+      - id: kube-manifest-lint
+        exclude: ^helm-chart/templates/.*$
 
+  # formatters
   - repo: https://github.com/asottile/reorder_python_imports
     rev: v1.9.0
     hooks:
@@ -22,11 +24,6 @@ repos:
     hooks:
       - id: black
 
-  #  - repo: https://github.com/pre-commit/mirrors-yapf
-  #    rev: v0.28.0
-  #    hooks:
-  #      - id: yapf
-
   - repo: https://github.com/asottile/pyupgrade
     rev: v1.26.0
     hooks:
@@ -34,7 +31,6 @@ repos:
         stages: [push]
 
   # linters
-
   - repo: https://github.com/PyCQA/bandit
     rev: 1.6.2
     hooks:
@@ -47,7 +43,6 @@ repos:
     hooks:
       - id: pydocstyle
         args: ["--ignore=D10,D21,D202"]
-
 
   - repo: local
     hooks:

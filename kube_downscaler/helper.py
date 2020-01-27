@@ -45,6 +45,10 @@ def _matches_recurring_time_spec(time: datetime.datetime, match: Match):
     local_time = tz.fromutc(time.replace(tzinfo=tz))
     day_from = WEEKDAYS.index(match.group(1).upper())
     day_to = WEEKDAYS.index(match.group(2).upper())
+    if day_from > day_to:
+        raise ValueError(
+            f'Time spec value "{match.group(0)}" has invalid weekday range ({match.group(1)} is not before {match.group(2)})'
+        )
     day_matches = day_from <= local_time.weekday() <= day_to
     local_time_minutes = local_time.hour * 60 + local_time.minute
     minute_from = int(match.group(3)) * 60 + int(match.group(4))

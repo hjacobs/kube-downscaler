@@ -49,12 +49,15 @@ def test_time_spec():
     )
 
 
-def test_wrong_weekday_range():
+def test_week_starts_sunday():
     # Monday, November 27th 2017
     dt = datetime(2017, 11, 27, 15, 33, tzinfo=timezone.utc)
-    with pytest.raises(ValueError) as excinfo:
-        matches_time_spec(dt, "Sun-Fri 15:30-16:00 UTC")
-    assert (
-        'Time spec value "Sun-Fri 15:30-16:00 UTC" has invalid weekday range (Sun is not before Fri)'
-        in str(excinfo.value)
-    )
+    assert matches_time_spec(dt, "Sun-Fri 15:30-16:00 UTC")
+    assert matches_time_spec(dt, "Sun-Mon 00:00-16:00 UTC")
+    assert not matches_time_spec(dt, "Sun-Mon 00:00-15:00 UTC")
+
+    # Sunday, November 26th 2017
+    dt = datetime(2017, 11, 26, 15, 33, tzinfo=timezone.utc)
+    assert matches_time_spec(dt, "Sun-Fri 15:30-16:00 UTC")
+    assert matches_time_spec(dt, "Sun-Mon 00:00-16:00 UTC")
+    assert not matches_time_spec(dt, "Sun-Mon 00:00-15:00 UTC")

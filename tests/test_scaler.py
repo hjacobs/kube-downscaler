@@ -712,3 +712,59 @@ def test_scaler_cronjob_unsuspend(monkeypatch):
         "spec": {"suspend": False, "startingDeadlineSeconds": 0},
     }
     assert json.loads(api.patch.call_args[1]["data"]) == patch_data
+
+
+def test_scaler_downscale_period_no_error(monkeypatch, caplog):
+    api = MagicMock()
+    monkeypatch.setattr(
+        "kube_downscaler.scaler.helper.get_kube_api", MagicMock(return_value=api)
+    )
+
+    def get(url, version, **kwargs):
+        if url == "pods":
+            data = {"items": []}
+        elif url == "cronjobs":
+            data = {
+                "items": [
+                    {
+                        "metadata": {
+                            "name": "cronjob-1",
+                            "namespace": "default",
+                            "creationTimestamp": "2019-03-01T16:38:00Z",
+                            "annotations": {},
+                        },
+                        "spec": {"suspend": False},
+                    },
+                ]
+            }
+        elif url == "namespaces/default":
+            data = {"metadata": {}}
+        else:
+            raise Exception(f"unexpected call: {url}, {version}, {kwargs}")
+
+        response = MagicMock()
+        response.json.return_value = data
+        return response
+
+    api.get = get
+
+    include_resources = frozenset(["cronjobs"])
+    scale(
+        namespace=None,
+        upscale_period="never",
+        downscale_period="Mon-Tue 19:00-19:00 UTC",
+        default_uptime="always",
+        default_downtime="never",
+        include_resources=include_resources,
+        exclude_namespaces=[],
+        exclude_deployments=[],
+        exclude_statefulsets=[],
+        exclude_cronjobs=[],
+        dry_run=False,
+        grace_period=300,
+        downtime_replicas=0,
+    )
+
+    assert api.patch.call_count == 0
+    for record in caplog.records:
+        assert record.levelname != "ERROR"

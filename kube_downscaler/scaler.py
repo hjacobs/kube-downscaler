@@ -89,6 +89,7 @@ def autoscale_resource(
             )
         else:
             ignore = False
+            is_uptime = True
 
             upscale_period = resource.annotations.get(
                 UPSCALE_PERIOD_ANNOTATION, upscale_period

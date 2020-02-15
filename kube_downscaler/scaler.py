@@ -175,7 +175,9 @@ def autoscale_resource(
                         uptime,
                         downtime,
                     )
-                    helper.add_event(resource, "Unsuspending CronJob", "ScaleUp", "Normal", dry_run)
+                    helper.add_event(
+                        resource, "Unsuspending CronJob", "ScaleUp", "Normal", dry_run
+                    )
                 else:
                     resource.replicas = int(original_replicas)
                     logger.info(
@@ -188,7 +190,9 @@ def autoscale_resource(
                         uptime,
                         downtime,
                     )
-                    helper.add_event(resource, "Scaling up replicas", "ScaleUp", "Normal", dry_run)
+                    helper.add_event(
+                        resource, "Scaling up replicas", "ScaleUp", "Normal", dry_run
+                    )
                 resource.annotations[ORIGINAL_REPLICAS_ANNOTATION] = None
                 update_needed = True
 
@@ -223,7 +227,13 @@ def autoscale_resource(
                             uptime,
                             downtime,
                         )
-                        helper.add_event(resource, "Suspending CronJob", "ScaleDown", "Normal", dry_run)
+                        helper.add_event(
+                            resource,
+                            "Suspending CronJob",
+                            "ScaleDown",
+                            "Normal",
+                            dry_run,
+                        )
                     else:
                         resource.replicas = target_replicas
                         logger.info(
@@ -236,7 +246,13 @@ def autoscale_resource(
                             uptime,
                             downtime,
                         )
-                        helper.add_event(resource, "Scaling down replicas", "ScaleDown", "Normal", dry_run)
+                        helper.add_event(
+                            resource,
+                            "Scaling down replicas",
+                            "ScaleDown",
+                            "Normal",
+                            dry_run,
+                        )
                     resource.annotations[ORIGINAL_REPLICAS_ANNOTATION] = str(replicas)
                     update_needed = True
             if update_needed:

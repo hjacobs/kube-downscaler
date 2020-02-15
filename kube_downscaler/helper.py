@@ -1,9 +1,8 @@
 import datetime
+import logging
 import os
 import re
 from typing import Match
-import datetime
-import logging
 
 import pykube
 import pytz
@@ -79,19 +78,23 @@ def get_kube_api():
 
 
 def add_event(resource, message: str, reason: str, type: str, dry_run: bool):
-    event = pykube.objects.Event.objects(resource.api).filter(
-        namespace=resource.namespace,
-        field_selector={
-            "involvedObject.uid": resource.metadata.get("uid"),
-            "reason": reason,
-            "type": type
-        }
-    ).get_or_none()
+    event = (
+        pykube.objects.Event.objects(resource.api)
+        .filter(
+            namespace=resource.namespace,
+            field_selector={
+                "involvedObject.uid": resource.metadata.get("uid"),
+                "reason": reason,
+                "type": type,
+            },
+        )
+        .get_or_none()
+    )
 
     if event and event.obj["message"] == message:
         now = datetime.datetime.utcnow()
         timestamp = now.strftime("%Y-%m-%dT%H:%M:%SZ")
-        event.obj["count"] = event.obj["count"]  + 1
+        event.obj["count"] = event.obj["count"] + 1
         event.obj["lastTimestamp"] = timestamp
         try:
             event.update()

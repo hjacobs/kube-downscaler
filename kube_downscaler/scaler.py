@@ -175,6 +175,7 @@ def autoscale_resource(
                         uptime,
                         downtime,
                     )
+                    helper.add_event(resource, "Unsuspending CronJob", "ScaleUp", "Normal", dry_run)
                 else:
                     resource.replicas = int(original_replicas)
                     logger.info(
@@ -187,8 +188,10 @@ def autoscale_resource(
                         uptime,
                         downtime,
                     )
+                    helper.add_event(resource, "Scaling up replicas", "ScaleUp", "Normal", dry_run)
                 resource.annotations[ORIGINAL_REPLICAS_ANNOTATION] = None
                 update_needed = True
+
             elif (
                 not ignore
                 and not is_uptime
@@ -220,6 +223,7 @@ def autoscale_resource(
                             uptime,
                             downtime,
                         )
+                        helper.add_event(resource, "Suspending CronJob", "ScaleDown", "Normal", dry_run)
                     else:
                         resource.replicas = target_replicas
                         logger.info(
@@ -232,6 +236,7 @@ def autoscale_resource(
                             uptime,
                             downtime,
                         )
+                        helper.add_event(resource, "Scaling down replicas", "ScaleDown", "Normal", dry_run)
                     resource.annotations[ORIGINAL_REPLICAS_ANNOTATION] = str(replicas)
                     update_needed = True
             if update_needed:
@@ -244,6 +249,15 @@ def autoscale_resource(
                     )
                 else:
                     resource.update()
+    except ValueError as e:
+        logger.exception(
+            "Failed to process %s %s/%s : %s",
+            resource.kind,
+            resource.namespace,
+            resource.name,
+            str(e),
+        )
+        helper.add_event(resource, str(e), "ValueError", "Warning", dry_run)
     except Exception as e:
         logger.exception(
             "Failed to process %s %s/%s : %s",

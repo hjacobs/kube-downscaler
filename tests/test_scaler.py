@@ -1,10 +1,14 @@
 import json
 from unittest.mock import MagicMock
+from unittest.mock import Mock
 
+from kube_downscaler import helper
 from kube_downscaler.scaler import DOWNTIME_REPLICAS_ANNOTATION
 from kube_downscaler.scaler import EXCLUDE_ANNOTATION
 from kube_downscaler.scaler import ORIGINAL_REPLICAS_ANNOTATION
 from kube_downscaler.scaler import scale
+
+helper.add_event = Mock(return_value=None)
 
 
 def test_scaler_always_up(monkeypatch):

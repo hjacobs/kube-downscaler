@@ -175,6 +175,19 @@ def test_forced_uptime(resource):
     resource.update.assert_not_called()
 
 
+def test_autoscale_bad_resource():
+    now = datetime.strptime("2018-10-23T21:56:00Z", "%Y-%m-%dT%H:%M:%SZ").replace(
+        tzinfo=timezone.utc
+    )
+    try:
+        autoscale_resource(
+            None, "never", "never", "never", "always", False, False, now, 0, 0
+        )
+        raise AssertionError("Failed to error out with a bad resource")
+    except Exception:
+        pass
+
+
 def test_scale_up(resource):
     resource.annotations = {
         EXCLUDE_ANNOTATION: "false",

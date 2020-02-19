@@ -77,7 +77,7 @@ def get_kube_api():
     return api
 
 
-def add_event(resource, message: str, reason: str, type: str, dry_run: bool):
+def add_event(resource, message: str, reason: str, event_type: str, dry_run: bool):
     event = (
         pykube.objects.Event.objects(resource.api)
         .filter(
@@ -85,12 +85,11 @@ def add_event(resource, message: str, reason: str, type: str, dry_run: bool):
             field_selector={
                 "involvedObject.uid": resource.metadata.get("uid"),
                 "reason": reason,
-                "type": type,
+                "type": event_type,
             },
         )
         .get_or_none()
     )
-
     if event and event.obj["message"] == message:
         now = datetime.datetime.utcnow()
         timestamp = now.strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -98,15 +97,15 @@ def add_event(resource, message: str, reason: str, type: str, dry_run: bool):
         event.obj["lastTimestamp"] = timestamp
         try:
             event.update()
+            return event
         except Exception as e:
             logger.error(f"Could not update event {event.obj}: {e}")
         return
 
-    create_event(resource, message, reason, type, dry_run)
-    return
+    return create_event(resource, message, reason, event_type, dry_run)
 
 
-def create_event(resource, message: str, reason: str, type: str, dry_run: bool):
+def create_event(resource, message: str, reason: str, event_type: str, dry_run: bool):
     now = datetime.datetime.utcnow()
     timestamp = now.strftime("%Y-%m-%dT%H:%M:%SZ")
     event = pykube.Event(
@@ -116,7 +115,7 @@ def create_event(resource, message: str, reason: str, type: str, dry_run: bool):
                 "namespace": resource.namespace,
                 "generateName": "kube-downscaler-",
             },
-            "type": type,
+            "type": event_type,
             "count": 1,
             "firstTimestamp": timestamp,
             "lastTimestamp": timestamp,
@@ -137,5 +136,6 @@ def create_event(resource, message: str, reason: str, type: str, dry_run: bool):
     if not dry_run:
         try:
             event.create()
+            return event
         except Exception as e:
             logger.error(f"Could not create event {event.obj}: {e}")

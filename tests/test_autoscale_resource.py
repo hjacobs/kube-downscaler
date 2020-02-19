@@ -3,13 +3,11 @@ import logging
 from datetime import datetime
 from datetime import timezone
 from unittest.mock import MagicMock
-from unittest.mock import Mock
 
 import pykube
 import pytest
 from pykube import Deployment
 
-from kube_downscaler import helper
 from kube_downscaler.resources.stack import Stack
 from kube_downscaler.scaler import autoscale_resource
 from kube_downscaler.scaler import DOWNSCALE_PERIOD_ANNOTATION
@@ -17,8 +15,6 @@ from kube_downscaler.scaler import DOWNTIME_REPLICAS_ANNOTATION
 from kube_downscaler.scaler import EXCLUDE_ANNOTATION
 from kube_downscaler.scaler import ORIGINAL_REPLICAS_ANNOTATION
 from kube_downscaler.scaler import UPSCALE_PERIOD_ANNOTATION
-
-helper.create_event = Mock(return_value=None)
 
 
 @pytest.fixture
@@ -31,7 +27,10 @@ def resource():
     return res
 
 
-def test_swallow_exception(resource, caplog):
+def test_swallow_exception(monkeypatch, resource, caplog):
+    monkeypatch.setattr(
+        "kube_downscaler.scaler.helper.add_event", MagicMock(return_value=None)
+    )
     caplog.set_level(logging.ERROR)
     resource.annotations = {}
     resource.replicas = 1

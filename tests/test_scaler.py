@@ -1,14 +1,10 @@
 import json
 from unittest.mock import MagicMock
-from unittest.mock import Mock
 
-from kube_downscaler import helper
 from kube_downscaler.scaler import DOWNTIME_REPLICAS_ANNOTATION
 from kube_downscaler.scaler import EXCLUDE_ANNOTATION
 from kube_downscaler.scaler import ORIGINAL_REPLICAS_ANNOTATION
 from kube_downscaler.scaler import scale
-
-helper.add_event = Mock(return_value=None)
 
 
 def test_scaler_always_up(monkeypatch):
@@ -70,6 +66,9 @@ def test_scaler_namespace_excluded(monkeypatch):
     api = MagicMock()
     monkeypatch.setattr(
         "kube_downscaler.scaler.helper.get_kube_api", MagicMock(return_value=api)
+    )
+    monkeypatch.setattr(
+        "kube_downscaler.scaler.helper.add_event", MagicMock(return_value=None)
     )
 
     def get(url, version, **kwargs):
@@ -144,6 +143,9 @@ def test_scaler_namespace_excluded_via_annotation(monkeypatch):
     api = MagicMock()
     monkeypatch.setattr(
         "kube_downscaler.scaler.helper.get_kube_api", MagicMock(return_value=api)
+    )
+    monkeypatch.setattr(
+        "kube_downscaler.scaler.helper.add_event", MagicMock(return_value=None)
     )
 
     def get(url, version, **kwargs):
@@ -221,6 +223,9 @@ def test_scaler_down_to(monkeypatch):
     monkeypatch.setattr(
         "kube_downscaler.scaler.helper.get_kube_api", MagicMock(return_value=api)
     )
+    monkeypatch.setattr(
+        "kube_downscaler.scaler.helper.add_event", MagicMock(return_value=None)
+    )
     SCALE_TO = 1
 
     def get(url, version, **kwargs):
@@ -277,6 +282,9 @@ def test_scaler_down_to_upscale(monkeypatch):
     api = MagicMock()
     monkeypatch.setattr(
         "kube_downscaler.scaler.helper.get_kube_api", MagicMock(return_value=api)
+    )
+    monkeypatch.setattr(
+        "kube_downscaler.scaler.helper.add_event", MagicMock(return_value=None)
     )
     SCALE_TO = 1
     ORIGINAL = 3
@@ -342,6 +350,9 @@ def test_scaler_upscale_on_exclude(monkeypatch):
     monkeypatch.setattr(
         "kube_downscaler.scaler.helper.get_kube_api", MagicMock(return_value=api)
     )
+    monkeypatch.setattr(
+        "kube_downscaler.scaler.helper.add_event", MagicMock(return_value=None)
+    )
     ORIGINAL_REPLICAS = 2
 
     def get(url, version, **kwargs):
@@ -406,6 +417,9 @@ def test_scaler_upscale_on_exclude_namespace(monkeypatch):
     api = MagicMock()
     monkeypatch.setattr(
         "kube_downscaler.scaler.helper.get_kube_api", MagicMock(return_value=api)
+    )
+    monkeypatch.setattr(
+        "kube_downscaler.scaler.helper.add_event", MagicMock(return_value=None)
     )
     ORIGINAL_REPLICAS = 2
 
@@ -524,6 +538,9 @@ def test_scaler_namespace_annotation_replicas(monkeypatch):
     monkeypatch.setattr(
         "kube_downscaler.scaler.helper.get_kube_api", MagicMock(return_value=api)
     )
+    monkeypatch.setattr(
+        "kube_downscaler.scaler.helper.add_event", MagicMock(return_value=None)
+    )
     SCALE_TO = 3
 
     def get(url, version, **kwargs):
@@ -582,6 +599,9 @@ def test_scaler_cronjob_suspend(monkeypatch):
     api = MagicMock()
     monkeypatch.setattr(
         "kube_downscaler.scaler.helper.get_kube_api", MagicMock(return_value=api)
+    )
+    monkeypatch.setattr(
+        "kube_downscaler.scaler.helper.add_event", MagicMock(return_value=None)
     )
 
     def get(url, version, **kwargs):
@@ -648,6 +668,9 @@ def test_scaler_cronjob_unsuspend(monkeypatch):
     api = MagicMock()
     monkeypatch.setattr(
         "kube_downscaler.scaler.helper.get_kube_api", MagicMock(return_value=api)
+    )
+    monkeypatch.setattr(
+        "kube_downscaler.scaler.helper.add_event", MagicMock(return_value=None)
     )
 
     def get(url, version, **kwargs):

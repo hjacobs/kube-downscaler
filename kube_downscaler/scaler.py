@@ -1,6 +1,7 @@
 import datetime
 import logging
 from typing import FrozenSet
+from typing import Optional
 
 import pykube
 from pykube import CronJob
@@ -21,11 +22,31 @@ DOWNTIME_ANNOTATION = "downscaler/downtime"
 DOWNTIME_REPLICAS_ANNOTATION = "downscaler/downtime-replicas"
 
 
-def within_grace_period(deploy, grace_period: int, now: datetime.datetime):
-    creation_time = datetime.datetime.strptime(
-        deploy.metadata["creationTimestamp"], "%Y-%m-%dT%H:%M:%SZ"
-    ).replace(tzinfo=datetime.timezone.utc)
-    delta = now - creation_time
+def parse_time(timestamp: str) -> datetime.datetime:
+    return datetime.datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%SZ").replace(
+        tzinfo=datetime.timezone.utc
+    )
+
+
+def within_grace_period(
+    resource,
+    grace_period: int,
+    now: datetime.datetime,
+    deployment_time_annotation: Optional[str] = None,
+):
+    update_time = parse_time(resource.metadata["creationTimestamp"])
+
+    if deployment_time_annotation:
+        annotations = resource.metadata.get("annotations", {})
+        deployment_time = annotations.get(deployment_time_annotation)
+        if deployment_time:
+            try:
+                update_time = max(update_time, parse_time(deployment_time))
+            except ValueError as e:
+                logger.warning(
+                    f"Invalid {deployment_time_annotation} in {resource.namespace}/{resource.name}: {e}"
+                )
+    delta = now - update_time
     return delta.total_seconds() <= grace_period
 
 
@@ -72,6 +93,7 @@ def autoscale_resource(
     grace_period: int,
     downtime_replicas: int,
     namespace_excluded=False,
+    deployment_time_annotation: Optional[str] = None,
 ):
     try:
         exclude = namespace_excluded or ignore_resource(resource)

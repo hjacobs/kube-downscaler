@@ -29,6 +29,16 @@ rules:
   - update
   - patch
 - apiGroups:
+  - batch
+  resources:
+  - cronjobs
+  verbs:
+  - get
+  - watch
+  - list
+  - update
+  - patch
+- apiGroups:
   - zalando.org
   resources:
   - stacks

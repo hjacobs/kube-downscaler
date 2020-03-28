@@ -35,7 +35,9 @@ class Stack(NamespacedAPIObject, ReplicatedMixin):
                 # reset to autoscaling
                 if "replicas" in self.obj["spec"]:
                     # => remove manual replica count
-                    del self.obj["spec"]["replicas"]
+                    # note that it's set to 'None' instead of deleting the property
+                    # (because of strategic object merge)
+                    self.obj["spec"]["replicas"] = None
             else:
                 self.obj["spec"]["replicas"] = value
         else:

@@ -1,7 +1,7 @@
 [tool]
 [tool.poetry]
 name = "kube-downscaler"
-version = "2019.1.1dev0"
+version = "2020.1.1dev0"
 description = "Scale down Kubernetes deployments after work hours"
 authors = ["Henning Jacobs <henning@jacobs1.de>"]
 

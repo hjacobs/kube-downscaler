@@ -23,8 +23,9 @@ class Stack(NamespacedAPIObject, ReplicatedMixin):
 
     @property
     def replicas(self):
-        if "replicas" in self.obj["spec"]:
-            return self.obj["spec"]["replicas"]
+        replicas = self.obj["spec"].get("replicas")
+        if replicas is not None:
+            return replicas
         else:
             return self.get_autoscaling_max_replicas()
 

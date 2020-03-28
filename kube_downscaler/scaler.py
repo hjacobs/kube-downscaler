@@ -92,8 +92,8 @@ def autoscale_resource(
     forced_uptime: bool,
     dry_run: bool,
     now: datetime.datetime,
-    grace_period: int,
-    downtime_replicas: int,
+    grace_period: int = 0,
+    downtime_replicas: int = 0,
     namespace_excluded=False,
     deployment_time_annotation: Optional[str] = None,
 ):

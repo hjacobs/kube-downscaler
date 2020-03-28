@@ -90,4 +90,8 @@ def get_parser():
         help="Default amount of replicas when downscaling (default: 0)",
         default=int(os.getenv("DOWNTIME_REPLICAS", 0)),
     )
+    parser.add_argument(
+        "--deployment-time-annotation",
+        help="Annotation that contains a resource's last deployment time, overrides creationTime. Use in combination with --grace-period.",
+    )
     return parser

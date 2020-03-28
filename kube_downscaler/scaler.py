@@ -222,7 +222,9 @@ def autoscale_resource(
                         DOWNTIME_REPLICAS_ANNOTATION, downtime_replicas
                     )
                 )
-                if within_grace_period(resource, grace_period, now):
+                if within_grace_period(
+                    resource, grace_period, now, deployment_time_annotation
+                ):
                     logger.info(
                         "%s %s/%s within grace period (%ds), not scaling down (yet)",
                         resource.kind,

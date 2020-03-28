@@ -21,6 +21,8 @@ UPTIME_ANNOTATION = "downscaler/uptime"
 DOWNTIME_ANNOTATION = "downscaler/downtime"
 DOWNTIME_REPLICAS_ANNOTATION = "downscaler/downtime-replicas"
 
+RESOURCE_CLASSES = [Deployment, StatefulSet, Stack, CronJob]
+
 
 def parse_time(timestamp: str) -> datetime.datetime:
     return datetime.datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%SZ").replace(
@@ -293,6 +295,7 @@ def autoscale_resources(
     now: datetime.datetime,
     grace_period: int,
     downtime_replicas: int,
+    deployment_time_annotation: Optional[str] = None,
 ):
     for resource in kind.objects(api, namespace=(namespace or pykube.all)):
         if resource.namespace in exclude_namespaces or resource.name in exclude_names:
@@ -344,6 +347,7 @@ def autoscale_resources(
             grace_period,
             default_downtime_replicas_for_namespace,
             namespace_excluded=excluded,
+            deployment_time_annotation=deployment_time_annotation,
         )
 
 
@@ -361,77 +365,30 @@ def scale(
     dry_run: bool,
     grace_period: int,
     downtime_replicas: int,
+    deployment_time_annotation: Optional[str] = None,
 ):
     api = helper.get_kube_api()
 
     now = datetime.datetime.now(datetime.timezone.utc)
     forced_uptime = pods_force_uptime(api, namespace)
 
-    if "deployments" in include_resources:
-        autoscale_resources(
-            api,
-            Deployment,
-            namespace,
-            exclude_namespaces,
-            exclude_deployments,
-            upscale_period,
-            downscale_period,
-            default_uptime,
-            default_downtime,
-            forced_uptime,
-            dry_run,
-            now,
-            grace_period,
-            downtime_replicas,
-        )
-    if "statefulsets" in include_resources:
-        autoscale_resources(
-            api,
-            StatefulSet,
-            namespace,
-            exclude_namespaces,
-            exclude_statefulsets,
-            upscale_period,
-            downscale_period,
-            default_uptime,
-            default_downtime,
-            forced_uptime,
-            dry_run,
-            now,
-            grace_period,
-            downtime_replicas,
-        )
-    if "stacks" in include_resources:
-        autoscale_resources(
-            api,
-            Stack,
-            namespace,
-            exclude_namespaces,
-            exclude_statefulsets,
-            upscale_period,
-            downscale_period,
-            default_uptime,
-            default_downtime,
-            forced_uptime,
-            dry_run,
-            now,
-            grace_period,
-            downtime_replicas,
-        )
-    if "cronjobs" in include_resources:
-        autoscale_resources(
-            api,
-            CronJob,
-            namespace,
-            exclude_namespaces,
-            exclude_cronjobs,
-            upscale_period,
-            downscale_period,
-            default_uptime,
-            default_downtime,
-            forced_uptime,
-            dry_run,
-            now,
-            grace_period,
-            downtime_replicas,
-        )
+    for clazz in RESOURCE_CLASSES:
+        plural = clazz.endpoint
+        if plural in include_resources:
+            autoscale_resources(
+                api,
+                clazz,
+                namespace,
+                exclude_namespaces,
+                exclude_deployments,
+                upscale_period,
+                downscale_period,
+                default_uptime,
+                default_downtime,
+                forced_uptime,
+                dry_run,
+                now,
+                grace_period,
+                downtime_replicas,
+                deployment_time_annotation,
+            )

@@ -18,7 +18,6 @@ rules:
   - watch
   - list
 - apiGroups:
-  - extensions
   - apps
   resources:
   - deployments

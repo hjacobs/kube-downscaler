@@ -523,6 +523,36 @@ def test_downscale_replicas_not_zero(resource):
     resource.update.assert_called_once()
 
 
+def test_downscale_stack_with_autoscaling():
+    stack = Stack(
+        None,
+        {
+            "metadata": {
+                "name": "my-stack",
+                "namespace": "my-ns",
+                "creationTimestamp": "2018-10-23T21:55:00Z",
+            },
+            "spec": {"horizontalPodAutoscaler": {"maxReplicas": 4}},
+        },
+    )
+
+    now = datetime.strptime("2018-10-23T21:56:00Z", "%Y-%m-%dT%H:%M:%SZ").replace(
+        tzinfo=timezone.utc
+    )
+    assert stack.replicas == 4
+    autoscale_resource(
+        stack,
+        upscale_period="never",
+        downscale_period="never",
+        default_uptime="never",
+        default_downtime="always",
+        forced_uptime=False,
+        dry_run=True,
+        now=now,
+    )
+    assert stack.replicas == 0
+
+
 def test_upscale_stack_with_autoscaling():
     stack = Stack(
         None,

@@ -11,6 +11,7 @@ class Stack(NamespacedAPIObject, ReplicatedMixin):
     kind = "Stack"
 
     def get_autoscaling_max_replicas(self):
+        """Return the Stack's HPA maxReplicas property or None if no autoscaling is configured."""
         spec = self.obj["spec"]
         if "autoscaler" in spec:
             # see https://github.com/zalando-incubator/stackset-controller/blob/2baddca617e2b76e34976357765206280cfd382e/pkg/apis/zalando.org/v1/types.go#L116
@@ -35,11 +36,13 @@ class Stack(NamespacedAPIObject, ReplicatedMixin):
                 # reset to autoscaling
                 if "replicas" in self.obj["spec"]:
                     # => remove manual replica count
-                    # note that it's set to 'None' instead of deleting the property
+                    # note that we set 'None' instead of deleting the property
                     # (because of strategic object merge)
                     self.obj["spec"]["replicas"] = None
             else:
+                # downscale to the given value
                 self.obj["spec"]["replicas"] = value
         else:
             # no autoscaling configured
+            # => we can use the replicas property directly
             self.obj["spec"]["replicas"] = value

@@ -153,6 +153,11 @@ Available command line options:
     Exclude specific statefulsets from statefulsets, can also be configured via environment variable ``EXCLUDE_STATEFULSETS``
 ``--downtime-replicas``
     Default value of replicas to downscale to, the annotation ``downscaler/downtime-replicas`` takes precedence over this value.
+``--deployment-time-annotation``
+    Optional: name of the annotation that would be used instead of the creation timestamp of the resource.
+    This option should be used if you want the resources to be kept scaled up during a grace period (``--grace-period``) after a deployment.
+    The format of the annotation's timestamp value must be exactly the same as for Kubernetes' ``creationTimestamp``: ``%Y-%m-%dT%H:%M:%SZ``.
+    Recommended: set this annotation by your deployment tooling automatically.
 
 Namespace Defaults
 ==================

@@ -18,11 +18,30 @@ rules:
   - watch
   - list
 - apiGroups:
-  - extensions
   - apps
   resources:
   - deployments
   - statefulsets
+  verbs:
+  - get
+  - watch
+  - list
+  - update
+  - patch
+- apiGroups:
+  - batch
+  resources:
+  - cronjobs
+  verbs:
+  - get
+  - watch
+  - list
+  - update
+  - patch
+- apiGroups:
+  - zalando.org
+  resources:
+  - stacks
   verbs:
   - get
   - watch

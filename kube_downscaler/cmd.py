@@ -90,4 +90,7 @@ def get_parser():
         help="Default amount of replicas when downscaling (default: 0)",
         default=int(os.getenv("DOWNTIME_REPLICAS", 0)),
     )
+    parser.add_argument(
+        "--enable-events", help="Enabled Events", action="store_true",
+    )
     return parser

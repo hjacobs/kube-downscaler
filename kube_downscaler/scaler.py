@@ -68,6 +68,7 @@ def autoscale_resource(
     default_downtime: str,
     forced_uptime: bool,
     dry_run: bool,
+    enable_events: bool,
     now: datetime.datetime,
     grace_period: int,
     downtime_replicas: int,
@@ -175,9 +176,14 @@ def autoscale_resource(
                         uptime,
                         downtime,
                     )
-                    helper.add_event(
-                        resource, "Unsuspending CronJob", "ScaleUp", "Normal", dry_run
-                    )
+                    if enable_events:
+                        helper.add_event(
+                            resource,
+                            "Unsuspending CronJob",
+                            "ScaleUp",
+                            "Normal",
+                            dry_run,
+                        )
                 else:
                     resource.replicas = int(original_replicas)
                     logger.info(
@@ -190,9 +196,14 @@ def autoscale_resource(
                         uptime,
                         downtime,
                     )
-                    helper.add_event(
-                        resource, "Scaling up replicas", "ScaleUp", "Normal", dry_run
-                    )
+                    if enable_events:
+                        helper.add_event(
+                            resource,
+                            "Scaling up replicas",
+                            "ScaleUp",
+                            "Normal",
+                            dry_run,
+                        )
                 resource.annotations[ORIGINAL_REPLICAS_ANNOTATION] = None
                 update_needed = True
 
@@ -227,13 +238,14 @@ def autoscale_resource(
                             uptime,
                             downtime,
                         )
-                        helper.add_event(
-                            resource,
-                            "Suspending CronJob",
-                            "ScaleDown",
-                            "Normal",
-                            dry_run,
-                        )
+                        if enable_events:
+                            helper.add_event(
+                                resource,
+                                "Suspending CronJob",
+                                "ScaleDown",
+                                "Normal",
+                                dry_run,
+                            )
                     else:
                         resource.replicas = target_replicas
                         logger.info(
@@ -246,13 +258,14 @@ def autoscale_resource(
                             uptime,
                             downtime,
                         )
-                        helper.add_event(
-                            resource,
-                            "Scaling down replicas",
-                            "ScaleDown",
-                            "Normal",
-                            dry_run,
-                        )
+                        if enable_events:
+                            helper.add_event(
+                                resource,
+                                "Scaling down replicas",
+                                "ScaleDown",
+                                "Normal",
+                                dry_run,
+                            )
                     resource.annotations[ORIGINAL_REPLICAS_ANNOTATION] = str(replicas)
                     update_needed = True
             if update_needed:
@@ -273,7 +286,8 @@ def autoscale_resource(
             resource.name,
             str(e),
         )
-        helper.add_event(resource, str(e), "ValueError", "Warning", dry_run)
+        if enable_events:
+            helper.add_event(resource, str(e), "ValueError", "Warning", dry_run)
     except Exception as e:
         logger.exception(
             "Failed to process %s %s/%s : %s",
@@ -296,6 +310,7 @@ def autoscale_resources(
     default_downtime: str,
     forced_uptime: bool,
     dry_run: bool,
+    enable_events: bool,
     now: datetime.datetime,
     grace_period: int,
     downtime_replicas: int,
@@ -346,6 +361,7 @@ def autoscale_resources(
             default_downtime_for_namespace,
             forced_uptime_for_namespace,
             dry_run,
+            enable_events,
             now,
             grace_period,
             default_downtime_replicas_for_namespace,
@@ -365,6 +381,7 @@ def scale(
     exclude_statefulsets: FrozenSet[str],
     exclude_cronjobs: FrozenSet[str],
     dry_run: bool,
+    enable_events: bool,
     grace_period: int,
     downtime_replicas: int,
 ):
@@ -386,6 +403,7 @@ def scale(
             default_downtime,
             forced_uptime,
             dry_run,
+            enable_events,
             now,
             grace_period,
             downtime_replicas,
@@ -403,6 +421,7 @@ def scale(
             default_downtime,
             forced_uptime,
             dry_run,
+            enable_events,
             now,
             grace_period,
             downtime_replicas,
@@ -420,6 +439,7 @@ def scale(
             default_downtime,
             forced_uptime,
             dry_run,
+            enable_events,
             now,
             grace_period,
             downtime_replicas,
@@ -437,6 +457,7 @@ def scale(
             default_downtime,
             forced_uptime,
             dry_run,
+            enable_events,
             now,
             grace_period,
             downtime_replicas,

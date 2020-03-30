@@ -40,6 +40,7 @@ def main(args=None):
         args.grace_period,
         args.interval,
         args.dry_run,
+        args.enable_events,
         args.downtime_replicas,
     )
 
@@ -59,6 +60,7 @@ def run_loop(
     grace_period,
     interval,
     dry_run,
+    enable_events,
     downtime_replicas,
 ):
     handler = shutdown.GracefulShutdown()
@@ -76,6 +78,7 @@ def run_loop(
                 exclude_statefulsets=frozenset(exclude_statefulsets.split(",")),
                 exclude_cronjobs=frozenset(exclude_cronjobs.split(",")),
                 dry_run=dry_run,
+                enable_events=enable_events,
                 grace_period=grace_period,
                 downtime_replicas=downtime_replicas,
             )

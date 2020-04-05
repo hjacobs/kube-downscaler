@@ -35,7 +35,7 @@ It will scale down the deployment's replicas if all of the following conditions 
     * ``DOWNSCALE_PERIOD`` or ``DEFAULT_DOWNTIME`` environment variable
 * the deployment's namespace is not part of the exclusion list (``kube-system`` is excluded by default)
 * the deployment's name is not part of the exclusion list
-* the deployment is not marked for exclusion (annotation ``downscaler/exclude: "true"``)
+* the deployment is not marked for exclusion (annotation ``downscaler/exclude: "true"`` or ``downscaler/exclude-until: "2024-04-05"``)
 * there are no active pods that force the whole cluster into uptime (annotation ``downscaler/force-uptime: "true"``)
 
 The deployment by default will be scaled down to zero replicas. This can be configured with a deployment or its namespace's annotation of ``downscaler/downtime-replicas`` (e.g. ``downscaler/downtime-replicas: "1"``) or via CLI with ``--downtime-replicas``.
@@ -183,6 +183,7 @@ The following annotations are supported on the Namespace level:
 * ``downscaler/downtime``
 * ``downscaler/force-uptime``
 * ``downscaler/exclude``
+* ``downscaler/exclude-until``
 * ``downscaler/downtime-replicas``
 
 Contributing

@@ -133,7 +133,7 @@ def test_scaler_namespace_excluded(monkeypatch):
         },
         "spec": {"replicas": 0},
     }
-    assert api.patch.call_args[1]["url"] == "deployments/deploy-2"
+    assert api.patch.call_args[1]["url"] == "/deployments/deploy-2"
     assert json.loads(api.patch.call_args[1]["data"]) == patch_data
 
 
@@ -209,7 +209,7 @@ def test_scaler_namespace_excluded_via_annotation(monkeypatch):
         },
         "spec": {"replicas": 0},
     }
-    assert api.patch.call_args[1]["url"] == "deployments/deploy-2"
+    assert api.patch.call_args[1]["url"] == "/deployments/deploy-2"
     assert json.loads(api.patch.call_args[1]["data"]) == patch_data
 
 
@@ -266,7 +266,7 @@ def test_scaler_down_to(monkeypatch):
     )
 
     assert api.patch.call_count == 1
-    assert api.patch.call_args[1]["url"] == "deployments/deploy-1"
+    assert api.patch.call_args[1]["url"] == "/deployments/deploy-1"
     assert json.loads(api.patch.call_args[1]["data"])["spec"]["replicas"] == SCALE_TO
 
 
@@ -327,7 +327,7 @@ def test_scaler_down_to_upscale(monkeypatch):
     )
 
     assert api.patch.call_count == 1
-    assert api.patch.call_args[1]["url"] == "deployments/deploy-1"
+    assert api.patch.call_args[1]["url"] == "/deployments/deploy-1"
     assert json.loads(api.patch.call_args[1]["data"])["spec"]["replicas"] == ORIGINAL
     assert not json.loads(api.patch.call_args[1]["data"])["metadata"]["annotations"][
         ORIGINAL_REPLICAS_ANNOTATION
@@ -389,7 +389,7 @@ def test_scaler_upscale_on_exclude(monkeypatch):
     )
 
     assert api.patch.call_count == 1
-    assert api.patch.call_args[1]["url"] == "deployments/deploy-1"
+    assert api.patch.call_args[1]["url"] == "/deployments/deploy-1"
     assert (
         json.loads(api.patch.call_args[1]["data"])["spec"]["replicas"]
         == ORIGINAL_REPLICAS
@@ -453,7 +453,7 @@ def test_scaler_upscale_on_exclude_namespace(monkeypatch):
     )
 
     assert api.patch.call_count == 1
-    assert api.patch.call_args[1]["url"] == "deployments/deploy-1"
+    assert api.patch.call_args[1]["url"] == "/deployments/deploy-1"
     assert (
         json.loads(api.patch.call_args[1]["data"])["spec"]["replicas"]
         == ORIGINAL_REPLICAS
@@ -571,7 +571,7 @@ def test_scaler_namespace_annotation_replicas(monkeypatch):
     )
 
     assert api.patch.call_count == 1
-    assert api.patch.call_args[1]["url"] == "deployments/deploy-1"
+    assert api.patch.call_args[1]["url"] == "/deployments/deploy-1"
     assert json.loads(api.patch.call_args[1]["data"])["spec"]["replicas"] == SCALE_TO
 
 
@@ -627,7 +627,7 @@ def test_scaler_cronjob_suspend(monkeypatch):
     )
 
     assert api.patch.call_count == 1
-    assert api.patch.call_args[1]["url"] == "cronjobs/cronjob-1"
+    assert api.patch.call_args[1]["url"] == "/cronjobs/cronjob-1"
 
     patch_data = {
         "metadata": {
@@ -701,7 +701,7 @@ def test_scaler_cronjob_unsuspend(monkeypatch):
     )
 
     assert api.patch.call_count == 1
-    assert api.patch.call_args[1]["url"] == "cronjobs/cronjob-1"
+    assert api.patch.call_args[1]["url"] == "/cronjobs/cronjob-1"
 
     patch_data = {
         "metadata": {
@@ -860,7 +860,7 @@ def test_scaler_deployment_excluded_until(monkeypatch):
         },
         "spec": {"replicas": 0},
     }
-    assert api.patch.call_args[1]["url"] == "deployments/deploy-2"
+    assert api.patch.call_args[1]["url"] == "/deployments/deploy-2"
     assert json.loads(api.patch.call_args[1]["data"]) == patch_data
 
 
@@ -940,5 +940,5 @@ def test_scaler_namespace_excluded_until(monkeypatch):
         },
         "spec": {"replicas": 0},
     }
-    assert api.patch.call_args[1]["url"] == "deployments/deploy-2"
+    assert api.patch.call_args[1]["url"] == "/deployments/deploy-2"
     assert json.loads(api.patch.call_args[1]["data"]) == patch_data

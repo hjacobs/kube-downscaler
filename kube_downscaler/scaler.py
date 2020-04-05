@@ -364,7 +364,7 @@ def scale(
     exclude_cronjobs: FrozenSet[str],
     dry_run: bool,
     grace_period: int,
-    downtime_replicas: int,
+    downtime_replicas: int = 0,
     deployment_time_annotation: Optional[str] = None,
 ):
     api = helper.get_kube_api()

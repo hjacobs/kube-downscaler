@@ -853,7 +853,10 @@ def test_scaler_deployment_excluded_until(monkeypatch):
             "name": "deploy-2",
             "namespace": "my-ns",
             "creationTimestamp": "2020-04-04T16:38:00Z",
-            "annotations": {ORIGINAL_REPLICAS_ANNOTATION: "2"},
+            "annotations": {
+                ORIGINAL_REPLICAS_ANNOTATION: "2",
+                "downscaler/exclude-until": "2020-04-04",
+            },
         },
         "spec": {"replicas": 0},
     }

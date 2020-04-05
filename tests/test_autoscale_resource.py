@@ -41,7 +41,7 @@ def test_swallow_exception(resource, caplog):
     assert resource.replicas == 1
     resource.update.assert_not_called()
     # check that the failure was logged
-    msg = "Failed to process MockResource mock/res-1 : time data 'invalid-timestamp!' does not match format '%Y-%m-%dT%H:%M:%SZ'"
+    msg = "Failed to process MockResource mock/res-1 : time data 'invalid-timestamp!' does not match any format (%Y-%m-%dT%H:%M:%SZ, %Y-%m-%dT%H:%M, %Y-%m-%d %H:%M, %Y-%m-%d)"
     assert caplog.record_tuples == [("kube_downscaler.scaler", logging.ERROR, msg)]
 
 

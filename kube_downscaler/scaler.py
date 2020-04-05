@@ -17,16 +17,31 @@ FORCE_UPTIME_ANNOTATION = "downscaler/force-uptime"
 UPSCALE_PERIOD_ANNOTATION = "downscaler/upscale-period"
 DOWNSCALE_PERIOD_ANNOTATION = "downscaler/downscale-period"
 EXCLUDE_ANNOTATION = "downscaler/exclude"
+EXCLUDE_UNTIL_ANNOTATION = "downscaler/exclude-until"
 UPTIME_ANNOTATION = "downscaler/uptime"
 DOWNTIME_ANNOTATION = "downscaler/downtime"
 DOWNTIME_REPLICAS_ANNOTATION = "downscaler/downtime-replicas"
 
 RESOURCE_CLASSES = [Deployment, StatefulSet, Stack, CronJob]
 
+TIMESTAMP_FORMATS = [
+    "%Y-%m-%dT%H:%M:%SZ",
+    "%Y-%m-%dT%H:%M",
+    "%Y-%m-%d %H:%M",
+    "%Y-%m-%d",
+]
+
 
 def parse_time(timestamp: str) -> datetime.datetime:
-    return datetime.datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%SZ").replace(
-        tzinfo=datetime.timezone.utc
+    for fmt in TIMESTAMP_FORMATS:
+        try:
+            dt = datetime.datetime.strptime(timestamp, fmt)
+        except ValueError:
+            pass
+        else:
+            return dt.replace(tzinfo=datetime.timezone.utc)
+    raise ValueError(
+        f"time data '{timestamp}' does not match any format ({', '.join(TIMESTAMP_FORMATS)})"
     )
 
 
@@ -74,13 +89,24 @@ def is_stack_deployment(resource: pykube.objects.NamespacedAPIObject) -> bool:
     return False
 
 
-def ignore_resource(resource: pykube.objects.NamespacedAPIObject) -> bool:
+def ignore_resource(
+    resource: pykube.objects.NamespacedAPIObject, now: datetime.datetime
+) -> bool:
     # Ignore deployments managed by stacks, we will downscale the stack instead
     if is_stack_deployment(resource):
         return True
 
     # any value different from "false" will ignore the resource (to be on the safe side)
-    return resource.annotations.get(EXCLUDE_ANNOTATION, "false").lower() != "false"
+    if resource.annotations.get(EXCLUDE_ANNOTATION, "false").lower() != "false":
+        return True
+
+    exclude_until = resource.annotations.get(EXCLUDE_UNTIL_ANNOTATION)
+    if exclude_until:
+        until_ts = parse_time(exclude_until)
+        if now < until_ts:
+            return True
+
+    return False
 
 
 def autoscale_resource(
@@ -98,7 +124,7 @@ def autoscale_resource(
     deployment_time_annotation: Optional[str] = None,
 ):
     try:
-        exclude = namespace_excluded or ignore_resource(resource)
+        exclude = namespace_excluded or ignore_resource(resource, now)
         original_replicas = resource.annotations.get(ORIGINAL_REPLICAS_ANNOTATION)
         downtime_replicas = int(
             resource.annotations.get(DOWNTIME_REPLICAS_ANNOTATION, downtime_replicas)
@@ -309,10 +335,7 @@ def autoscale_resources(
         # Override defaults with (optional) annotations from Namespace
         namespace_obj = pykube.Namespace.objects(api).get_by_name(resource.namespace)
 
-        excluded = (
-            namespace_obj.annotations.get(EXCLUDE_ANNOTATION, "false").lower()
-            != "false"
-        )
+        excluded = ignore_resource(namespace_obj, now)
 
         default_uptime_for_namespace = namespace_obj.annotations.get(
             UPTIME_ANNOTATION, default_uptime
@@ -364,7 +387,7 @@ def scale(
     exclude_cronjobs: FrozenSet[str],
     dry_run: bool,
     grace_period: int,
-    downtime_replicas: int,
+    downtime_replicas: int = 0,
     deployment_time_annotation: Optional[str] = None,
 ):
     api = helper.get_kube_api()

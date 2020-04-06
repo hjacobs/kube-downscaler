@@ -61,7 +61,8 @@ def test_exclude(resource):
     assert ORIGINAL_REPLICAS_ANNOTATION not in resource.annotations
 
 
-def test_exclude_until_invalid_time(resource):
+def test_exclude_until_invalid_time(resource, caplog):
+    caplog.set_level(logging.WARNING)
     resource.annotations = {EXCLUDE_UNTIL_ANNOTATION: "some-invalid-timestamp"}
     resource.replicas = 1
     now = datetime.strptime("2018-10-23T21:56:00Z", "%Y-%m-%dT%H:%M:%SZ").replace(
@@ -82,6 +83,10 @@ def test_exclude_until_invalid_time(resource):
     assert resource.annotations[ORIGINAL_REPLICAS_ANNOTATION] == "1"
     # dry run will update the object properties, but won't call the Kubernetes API (update)
     resource.update.assert_not_called()
+
+    # check that the warning was logged
+    msg = "Invalid annotation value for 'downscaler/exclude-until' on mock/res-1: time data 'some-invalid-timestamp' does not match any format (%Y-%m-%dT%H:%M:%SZ, %Y-%m-%dT%H:%M, %Y-%m-%d %H:%M, %Y-%m-%d)"
+    assert caplog.record_tuples == [("kube_downscaler.scaler", logging.WARNING, msg)]
 
 
 def test_dry_run(resource):

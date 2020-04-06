@@ -106,7 +106,7 @@ def ignore_resource(
             until_ts = parse_time(exclude_until)
         except ValueError as e:
             logger.warning(
-                f"Invalid {EXCLUDE_UNTIL_ANNOTATION} on {resource.namespace}/{resource.name}: {e}"
+                f"Invalid annotation value for '{EXCLUDE_UNTIL_ANNOTATION}' on {resource.namespace}/{resource.name}: {e}"
             )
             # we will ignore the invalid timestamp and treat the resource as not excluded
             return False

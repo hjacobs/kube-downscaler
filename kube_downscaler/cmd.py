@@ -38,7 +38,8 @@ def get_parser():
         "--include-resources",
         type=check_include_resources,
         default="deployments",
-        help="Downscale resources of this kind as comma separated list. [deployments, statefulsets, stacks, horizontalpodautoscalers] (default: deployments)",
+        help="Downscale resources of this kind as comma separated list. [%s] (default: deployments)"
+        % (",".join(VALID_RESOURCES)),
     )
     parser.add_argument(
         "--grace-period",

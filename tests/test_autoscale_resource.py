@@ -7,6 +7,7 @@ from unittest.mock import MagicMock
 import pykube
 import pytest
 from pykube import Deployment
+from pykube import HorizontalPodAutoscaler
 
 from kube_downscaler.resources.stack import Stack
 from kube_downscaler.scaler import autoscale_resource
@@ -613,3 +614,66 @@ def test_upscale_stack_with_autoscaling():
     assert stack.obj["spec"]["replicas"] is None
     assert stack.replicas == 4
     assert stack.annotations[ORIGINAL_REPLICAS_ANNOTATION] is None
+
+
+def test_downscale_hpa_with_autoscaling():
+    hpa = HorizontalPodAutoscaler(
+        None,
+        {
+            "metadata": {
+                "name": "my-hpa",
+                "namespace": "my-ns",
+                "creationTimestamp": "2018-10-23T21:55:00Z",
+                "annotations": {DOWNTIME_REPLICAS_ANNOTATION: str(1)},
+            },
+            "spec": {"minReplicas": 4},
+        },
+    )
+    now = datetime.strptime("2018-10-23T21:56:00Z", "%Y-%m-%dT%H:%M:%SZ").replace(
+        tzinfo=timezone.utc
+    )
+    autoscale_resource(
+        hpa,
+        upscale_period="never",
+        downscale_period="never",
+        default_uptime="never",
+        default_downtime="always",
+        forced_uptime=False,
+        dry_run=True,
+        now=now,
+    )
+    assert hpa.obj["spec"]["minReplicas"] == 1
+    assert hpa.obj["metadata"]["annotations"][ORIGINAL_REPLICAS_ANNOTATION] == str(4)
+
+
+def test_upscale_hpa_with_autoscaling():
+    hpa = HorizontalPodAutoscaler(
+        None,
+        {
+            "metadata": {
+                "name": "my-hpa",
+                "namespace": "my-ns",
+                "creationTimestamp": "2018-10-23T21:55:00Z",
+                "annotations": {
+                    DOWNTIME_REPLICAS_ANNOTATION: str(1),
+                    ORIGINAL_REPLICAS_ANNOTATION: str(4),
+                },
+            },
+            "spec": {"minReplicas": 1},
+        },
+    )
+    now = datetime.strptime("2018-10-23T22:15:00Z", "%Y-%m-%dT%H:%M:%SZ").replace(
+        tzinfo=timezone.utc
+    )
+    autoscale_resource(
+        hpa,
+        upscale_period="never",
+        downscale_period="never",
+        default_uptime="always",
+        default_downtime="never",
+        forced_uptime=False,
+        dry_run=True,
+        now=now,
+    )
+    assert hpa.obj["spec"]["minReplicas"] == 4
+    assert hpa.obj["metadata"]["annotations"][ORIGINAL_REPLICAS_ANNOTATION] is None

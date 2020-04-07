@@ -1,7 +1,9 @@
 import argparse
 import os
 
-VALID_RESOURCES = frozenset(["deployments", "statefulsets", "stacks", "cronjobs"])
+VALID_RESOURCES = frozenset(
+    ["deployments", "statefulsets", "stacks", "cronjobs", "horizontalpodautoscalers"]
+)
 
 
 def check_include_resources(value):
@@ -36,7 +38,7 @@ def get_parser():
         "--include-resources",
         type=check_include_resources,
         default="deployments",
-        help="Downscale resources of this kind as comma separated list. [deployments, statefulsets, stacks] (default: deployments)",
+        help="Downscale resources of this kind as comma separated list. [deployments, statefulsets, stacks, horizontalpodautoscalers] (default: deployments)",
     )
     parser.add_argument(
         "--grace-period",

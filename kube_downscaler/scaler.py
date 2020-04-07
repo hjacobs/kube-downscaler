@@ -6,6 +6,7 @@ from typing import Optional
 import pykube
 from pykube import CronJob
 from pykube import Deployment
+from pykube import HorizontalPodAutoscaler
 from pykube import StatefulSet
 
 from kube_downscaler import helper
@@ -22,7 +23,7 @@ UPTIME_ANNOTATION = "downscaler/uptime"
 DOWNTIME_ANNOTATION = "downscaler/downtime"
 DOWNTIME_REPLICAS_ANNOTATION = "downscaler/downtime-replicas"
 
-RESOURCE_CLASSES = [Deployment, StatefulSet, Stack, CronJob]
+RESOURCE_CLASSES = [Deployment, StatefulSet, Stack, CronJob, HorizontalPodAutoscaler]
 
 TIMESTAMP_FORMATS = [
     "%Y-%m-%dT%H:%M:%SZ",
@@ -200,6 +201,17 @@ def autoscale_resource(
                     "suspended" if original_replicas == 0 else "not suspended",
                     uptime,
                 )
+            elif resource.kind == "HorizontalPodAutoscaler":
+                replicas = resource.obj["spec"]["minReplicas"]
+                logger.debug(
+                    "%s %s/%s has %s minReplicas (original: %s, uptime: %s)",
+                    resource.kind,
+                    resource.namespace,
+                    resource.name,
+                    replicas,
+                    original_replicas,
+                    uptime,
+                )
             else:
                 replicas = resource.replicas
                 logger.debug(
@@ -229,6 +241,18 @@ def autoscale_resource(
                         resource.kind,
                         resource.namespace,
                         resource.name,
+                        uptime,
+                        downtime,
+                    )
+                elif resource.kind == "HorizontalPodAutoscaler":
+                    resource.obj["spec"]["minReplicas"] = int(original_replicas)
+                    logger.info(
+                        "Scaling up %s %s/%s from %s to %s minReplicas (uptime: %s, downtime: %s)",
+                        resource.kind,
+                        resource.namespace,
+                        resource.name,
+                        replicas,
+                        original_replicas,
                         uptime,
                         downtime,
                     )
@@ -276,6 +300,18 @@ def autoscale_resource(
                             resource.kind,
                             resource.namespace,
                             resource.name,
+                            uptime,
+                            downtime,
+                        )
+                    elif resource.kind == "HorizontalPodAutoscaler":
+                        resource.obj["spec"]["minReplicas"] = target_replicas
+                        logger.info(
+                            "Scaling down %s %s/%s from %s to %s minReplicas (uptime: %s, downtime: %s)",
+                            resource.kind,
+                            resource.namespace,
+                            resource.name,
+                            replicas,
+                            target_replicas,
                             uptime,
                             downtime,
                         )

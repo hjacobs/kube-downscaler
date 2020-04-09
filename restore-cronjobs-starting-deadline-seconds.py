@@ -19,7 +19,7 @@ for cronjob in CronJob.objects(api).filter(namespace=pykube.all):
         if last_applied_config_json:
             last_applied_config = json.loads(last_applied_config_json)
             original_value = last_applied_config["spec"].get("startingDeadlineSeconds")
-            if original_value is not None and original_value != 0:
+            if original_value is None or original_value != 0:
                 cronjob.obj["spec"]["startingDeadlineSeconds"] = original_value
                 print(
                     f"Updating startingDeadlineSeconds for {cronjob.namespace}/{cronjob.name} to {original_value}.."

@@ -348,7 +348,9 @@ def autoscale_resources(
             )
             continue
 
-        logger.debug(f"Processing namespace {current_namespace}..")
+        logger.debug(
+            f"Processing {len(resources)} {kind.endpoint} in namespace {current_namespace}.."
+        )
 
         # Override defaults with (optional) annotations from Namespace
         namespace_obj = Namespace.objects(api).get_by_name(current_namespace)

@@ -18,9 +18,9 @@ Kubernetes Downscaler
    :target: http://calver.org/
    :alt: CalVer
 
-Scale down Kubernetes deployments and/or statefulsets and/or horizontalpodautoscalers during non-work hours.
+Scale down Kubernetes deployments, statefulsets, and/or horizontalpodautoscalers during non-work hours.
 
-Deployments are interchangeable by statefulset/horizontalpodautoscalers for this whole guide unless explicitly stated otherwise.
+Deployments are interchangeable by statefulsets/horizontalpodautoscalers for this whole guide unless explicitly stated otherwise.
 
 It will scale down the deployment's replicas if all of the following conditions are met:
 
@@ -29,8 +29,8 @@ It will scale down the deployment's replicas if all of the following conditions 
     * ``downscaler/upscale-period`` or ``downscaler/uptime`` annotation on the deployment/stateful set
     * ``downscaler/downscale-period`` or ``downscaler/downtime`` annotation on the deployment/stateful set's namespace
     * ``downscaler/upscale-period`` or ``downscaler/uptime`` annotation on the deployment/stateful set's namespace
-    * ``--upscale-period`` or ``--default-uptime`` cli argument
-    * ``--downscale-period`` or ``--default-downtime`` cli argument
+    * ``--upscale-period`` or ``--default-uptime`` CLI argument
+    * ``--downscale-period`` or ``--default-downtime`` CLI argument
     * ``UPSCALE_PERIOD`` or ``DEFAULT_UPTIME`` environment variable
     * ``DOWNSCALE_PERIOD`` or ``DEFAULT_DOWNTIME`` environment variable
 * the deployment's namespace is not part of the exclusion list (``kube-system`` is excluded by default)
@@ -39,7 +39,7 @@ It will scale down the deployment's replicas if all of the following conditions 
 * there are no active pods that force the whole cluster into uptime (annotation ``downscaler/force-uptime: "true"``)
 
 The deployment by default will be scaled down to zero replicas. This can be configured with a deployment or its namespace's annotation of ``downscaler/downtime-replicas`` (e.g. ``downscaler/downtime-replicas: "1"``) or via CLI with ``--downtime-replicas``.
-In case of horizontalpodautoscalers, the `minReplicas` field cannot be set to zero and thus ``downscaler/downtime-replicas`` should be atleast ``1``.
+In case of horizontalpodautoscalers, the `minReplicas` field cannot be set to zero and thus ``downscaler/downtime-replicas`` should be at least ``1``.
 
 Example use cases:
 
@@ -82,10 +82,10 @@ The downscaler will eventually log something like:
 
     INFO: Scaling down Deployment default/nginx from 1 to 0 replicas (uptime: Mon-Fri 09:00-17:00 America/Buenos_Aires, downtime: never)
 
-Note that in cases where HPA is used along with Deployments, consider the following:
+Note that in cases where a HorizontalPodAutoscaler (HPA) is used along with Deployments, consider the following:
 
-* If downscale to 0 is desired, annotation is applied at Deployment. (Special case, since minReplicas of 0 at HPA is not allowed. Setting Deployment replica to 0, essentially makes the HPA behave as disabled. In such a case, the HPA will emit events like `` failed to get memory utilization: unable to get metrics for resource memory: no metrics returned from resource metrics API`` as there is no Pod to retrieve metric from.)
-* If downscale greater than 0 is desired, annotation is applied at HPA. This allows for dynamic scaling of the Pods even during downtime based upon the external traffic as well as maintain a lower minReplicas during downtime if there is no/low traffic. If the Deployment is annotated instead of the HPA, it leads to a race condition where kube-downscaler downscales the Deployment and HPA upscales it as its minReplica is higher.
+* If downscale to 0 replicas is desired, the annotation should be applied on the Deployment. This is a special case, since ``minReplicas`` of 0 on HPA is not allowed. Setting Deployment replicas to 0 essentially disables the HPA. In such a case, the HPA will emit events like "failed to get memory utilization: unable to get metrics for resource memory: no metrics returned from resource metrics API" as there is no Pod to retrieve metrics from.
+* If downscale greater than 0 is desired, the annotation should be applied on the HPA. This allows for dynamic scaling of the Pods even during downtime based upon the external traffic as well as maintain a lower ``minReplicas`` during downtime if there is no/low traffic. If the Deployment is annotated instead of the HPA, it leads to a race condition where kube-downscaler scales down the Deployment and HPA upscales it as its ``minReplicas`` is higher.
 
 Configuration
 =============

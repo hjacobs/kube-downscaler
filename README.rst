@@ -18,13 +18,13 @@ Kubernetes Downscaler
    :target: http://calver.org/
    :alt: CalVer
 
-Scale down Kubernetes deployments, statefulsets, and/or horizontalpodautoscalers during non-work hours.
+Scale down Kubernetes Deployments, StatefulSets, and/or HorizontalPodAutoscalers during non-work hours.
 
 Deployments are interchangeable by statefulsets/horizontalpodautoscalers for this whole guide unless explicitly stated otherwise.
 
 It will scale down the deployment's replicas if all of the following conditions are met:
 
-* current time is not part of the "uptime" schedule or current time is part of the "downtime" schedule. The schedules are being evaluated in following order:
+* current time is not part of the "uptime" schedule or current time is part of the "downtime" schedule. The schedules are evaluated in the following order:
     * ``downscaler/downscale-period`` or ``downscaler/downtime`` annotation on the deployment/stateful set
     * ``downscaler/upscale-period`` or ``downscaler/uptime`` annotation on the deployment/stateful set
     * ``downscaler/downscale-period`` or ``downscaler/downtime`` annotation on the deployment/stateful set's namespace
@@ -39,7 +39,7 @@ It will scale down the deployment's replicas if all of the following conditions 
 * there are no active pods that force the whole cluster into uptime (annotation ``downscaler/force-uptime: "true"``)
 
 The deployment by default will be scaled down to zero replicas. This can be configured with a deployment or its namespace's annotation of ``downscaler/downtime-replicas`` (e.g. ``downscaler/downtime-replicas: "1"``) or via CLI with ``--downtime-replicas``.
-In case of horizontalpodautoscalers, the `minReplicas` field cannot be set to zero and thus ``downscaler/downtime-replicas`` should be at least ``1``.
+In case of HorizontalPodAutoscalers, the ``minReplicas`` field cannot be set to zero and thus ``downscaler/downtime-replicas`` should be at least ``1``.
 
 Example use cases:
 
@@ -184,9 +184,9 @@ The following annotations are supported on the Namespace level:
 
 * ``downscaler/upscale-period``
 * ``downscaler/downscale-period``
-* ``downscaler/uptime``
-* ``downscaler/downtime``
-* ``downscaler/force-uptime``
+* ``downscaler/uptime``: set "uptime" for all resources in this namespace
+* ``downscaler/downtime``: set "downtime" for all resources in this namespace
+* ``downscaler/force-uptime``: force scaling up all resources in this namespace
 * ``downscaler/exclude``: set to ``true`` to exclude all resources in the namespace
 * ``downscaler/exclude-until``: temporarily exclude all resources in the namespace until the given timestamp
 * ``downscaler/downtime-replicas``: overwrite the default target replicas to scale down to (default: zero)

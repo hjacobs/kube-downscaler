@@ -404,8 +404,6 @@ def scale(
     include_resources: FrozenSet[str],
     exclude_namespaces: FrozenSet[str],
     exclude_deployments: FrozenSet[str],
-    exclude_statefulsets: FrozenSet[str],
-    exclude_cronjobs: FrozenSet[str],
     dry_run: bool,
     grace_period: int,
     downtime_replicas: int = 0,

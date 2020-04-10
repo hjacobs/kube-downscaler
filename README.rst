@@ -153,9 +153,8 @@ Available command line options:
 ``--exclude-namespaces``
     Exclude namespaces from downscaling (default: kube-system), can also be configured via environment variable ``EXCLUDE_NAMESPACES``
 ``--exclude-deployments``
-    Exclude specific deployments from downscaling (default: kube-downscaler, downscaler), can also be configured via environment variable ``EXCLUDE_DEPLOYMENTS``
-``--exclude-statefulsets``
-    Exclude specific statefulsets from statefulsets, can also be configured via environment variable ``EXCLUDE_STATEFULSETS``
+    Exclude specific deployments/statefulsets/cronjobs from downscaling (default: kube-downscaler, downscaler), can also be configured via environment variable ``EXCLUDE_DEPLOYMENTS``.
+    Despite its name, this option will match the name of any included resource type (Deployment, StatefulSet, CronJob, ..).
 ``--downtime-replicas``
     Default value of replicas to downscale to, the annotation ``downscaler/downtime-replicas`` takes precedence over this value.
 ``--deployment-time-annotation``

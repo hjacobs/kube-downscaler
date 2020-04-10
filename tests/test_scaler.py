@@ -53,8 +53,6 @@ def test_scaler_always_up(monkeypatch):
         include_resources=include_resources,
         exclude_namespaces=[],
         exclude_deployments=[],
-        exclude_statefulsets=[],
-        exclude_cronjobs=[],
         dry_run=False,
         grace_period=300,
         downtime_replicas=0,
@@ -114,8 +112,6 @@ def test_scaler_namespace_excluded(monkeypatch):
         include_resources=include_resources,
         exclude_namespaces=["system-ns"],
         exclude_deployments=[],
-        exclude_statefulsets=[],
-        exclude_cronjobs=[],
         dry_run=False,
         grace_period=300,
         downtime_replicas=0,
@@ -190,8 +186,6 @@ def test_scaler_namespace_excluded_via_annotation(monkeypatch):
         include_resources=include_resources,
         exclude_namespaces=[],
         exclude_deployments=[],
-        exclude_statefulsets=[],
-        exclude_cronjobs=[],
         dry_run=False,
         grace_period=300,
         downtime_replicas=0,
@@ -258,8 +252,6 @@ def test_scaler_down_to(monkeypatch):
         include_resources=include_resources,
         exclude_namespaces=[],
         exclude_deployments=[],
-        exclude_statefulsets=[],
-        exclude_cronjobs=[],
         dry_run=False,
         grace_period=300,
         downtime_replicas=0,
@@ -319,8 +311,6 @@ def test_scaler_down_to_upscale(monkeypatch):
         include_resources=include_resources,
         exclude_namespaces=[],
         exclude_deployments=[],
-        exclude_statefulsets=[],
-        exclude_cronjobs=[],
         dry_run=False,
         grace_period=300,
         downtime_replicas=0,
@@ -381,8 +371,6 @@ def test_scaler_upscale_on_exclude(monkeypatch):
         include_resources=include_resources,
         exclude_namespaces=[],
         exclude_deployments=[],
-        exclude_statefulsets=[],
-        exclude_cronjobs=[],
         dry_run=False,
         grace_period=300,
         downtime_replicas=0,
@@ -445,8 +433,6 @@ def test_scaler_upscale_on_exclude_namespace(monkeypatch):
         include_resources=include_resources,
         exclude_namespaces=[],
         exclude_deployments=[],
-        exclude_statefulsets=[],
-        exclude_cronjobs=[],
         dry_run=False,
         grace_period=300,
         downtime_replicas=0,
@@ -506,8 +492,6 @@ def test_scaler_always_upscale(monkeypatch):
         include_resources=include_resources,
         exclude_namespaces=[],
         exclude_deployments=[],
-        exclude_statefulsets=[],
-        exclude_cronjobs=[],
         dry_run=False,
         grace_period=300,
         downtime_replicas=0,
@@ -563,8 +547,6 @@ def test_scaler_namespace_annotation_replicas(monkeypatch):
         include_resources=include_resources,
         exclude_namespaces=[],
         exclude_deployments=[],
-        exclude_statefulsets=[],
-        exclude_cronjobs=[],
         dry_run=False,
         grace_period=300,
         downtime_replicas=0,
@@ -619,8 +601,6 @@ def test_scaler_cronjob_suspend(monkeypatch):
         include_resources=include_resources,
         exclude_namespaces=[],
         exclude_deployments=[],
-        exclude_statefulsets=[],
-        exclude_cronjobs=[],
         dry_run=False,
         grace_period=300,
         downtime_replicas=0,
@@ -693,8 +673,6 @@ def test_scaler_cronjob_unsuspend(monkeypatch):
         include_resources=include_resources,
         exclude_namespaces=[],
         exclude_deployments=[],
-        exclude_statefulsets=[],
-        exclude_cronjobs=[],
         dry_run=False,
         grace_period=300,
         downtime_replicas=0,
@@ -759,8 +737,6 @@ def test_scaler_downscale_period_no_error(monkeypatch, caplog):
         include_resources=include_resources,
         exclude_namespaces=[],
         exclude_deployments=[],
-        exclude_statefulsets=[],
-        exclude_cronjobs=[],
         dry_run=False,
         grace_period=300,
         downtime_replicas=0,
@@ -839,8 +815,6 @@ def test_scaler_deployment_excluded_until(monkeypatch):
         include_resources=include_resources,
         exclude_namespaces=[],
         exclude_deployments=[],
-        exclude_statefulsets=[],
-        exclude_cronjobs=[],
         dry_run=False,
         grace_period=300,
     )
@@ -921,8 +895,6 @@ def test_scaler_namespace_excluded_until(monkeypatch):
         include_resources=include_resources,
         exclude_namespaces=[],
         exclude_deployments=[],
-        exclude_statefulsets=[],
-        exclude_cronjobs=[],
         dry_run=False,
         grace_period=300,
         downtime_replicas=0,
@@ -935,6 +907,77 @@ def test_scaler_namespace_excluded_until(monkeypatch):
         "metadata": {
             "name": "deploy-2",
             "namespace": "ns-2",
+            "creationTimestamp": "2019-03-01T16:38:00Z",
+            "annotations": {ORIGINAL_REPLICAS_ANNOTATION: "2"},
+        },
+        "spec": {"replicas": 0},
+    }
+    assert api.patch.call_args[1]["url"] == "/deployments/deploy-2"
+    assert json.loads(api.patch.call_args[1]["data"]) == patch_data
+
+
+def test_scaler_name_excluded(monkeypatch):
+    api = MagicMock()
+    monkeypatch.setattr(
+        "kube_downscaler.scaler.helper.get_kube_api", MagicMock(return_value=api)
+    )
+
+    def get(url, version, **kwargs):
+        if url == "pods":
+            data = {"items": []}
+        elif url == "deployments":
+            data = {
+                "items": [
+                    {
+                        "metadata": {
+                            "name": "sysdep-1",
+                            "namespace": "system-ns",
+                            "creationTimestamp": "2019-03-01T16:38:00Z",
+                        },
+                        "spec": {"replicas": 1},
+                    },
+                    {
+                        "metadata": {
+                            "name": "deploy-2",
+                            "namespace": "default",
+                            "creationTimestamp": "2019-03-01T16:38:00Z",
+                        },
+                        "spec": {"replicas": 2},
+                    },
+                ]
+            }
+        elif url == "namespaces/default":
+            data = {"metadata": {}}
+        else:
+            raise Exception(f"unexpected call: {url}, {version}, {kwargs}")
+
+        response = MagicMock()
+        response.json.return_value = data
+        return response
+
+    api.get = get
+
+    include_resources = frozenset(["deployments"])
+    scale(
+        namespace=None,
+        upscale_period="never",
+        downscale_period="never",
+        default_uptime="never",
+        default_downtime="always",
+        include_resources=include_resources,
+        exclude_namespaces=[],
+        exclude_deployments=["sysdep-1"],
+        dry_run=False,
+        grace_period=300,
+    )
+
+    assert api.patch.call_count == 1
+
+    # make sure that deploy-2 was updated (sysdep-1 was excluded)
+    patch_data = {
+        "metadata": {
+            "name": "deploy-2",
+            "namespace": "default",
             "creationTimestamp": "2019-03-01T16:38:00Z",
             "annotations": {ORIGINAL_REPLICAS_ANNOTATION: "2"},
         },

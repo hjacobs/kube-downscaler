@@ -77,16 +77,6 @@ def get_parser():
         default=os.getenv("EXCLUDE_DEPLOYMENTS", "kube-downscaler,downscaler"),
     )
     parser.add_argument(
-        "--exclude-statefulsets",
-        help="Exclude specific statefulsets from downscaling",
-        default=os.getenv("EXCLUDE_STATEFULSETS", ""),
-    )
-    parser.add_argument(
-        "--exclude-cronjobs",
-        help="Exclude specific cronjobs from downscaling",
-        default=os.getenv("EXCLUDE_CRONJOBS", ""),
-    )
-    parser.add_argument(
         "--downtime-replicas",
         type=int,
         help="Default amount of replicas when downscaling (default: 0)",

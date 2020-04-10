@@ -14,7 +14,6 @@ from kube_downscaler import helper
 from kube_downscaler.helper import matches_time_spec
 from kube_downscaler.resources.stack import Stack
 
-logger = logging.getLogger(__name__)
 ORIGINAL_REPLICAS_ANNOTATION = "downscaler/original-replicas"
 FORCE_UPTIME_ANNOTATION = "downscaler/force-uptime"
 UPSCALE_PERIOD_ANNOTATION = "downscaler/upscale-period"
@@ -33,6 +32,8 @@ TIMESTAMP_FORMATS = [
     "%Y-%m-%d %H:%M",
     "%Y-%m-%d",
 ]
+
+logger = logging.getLogger(__name__)
 
 
 def parse_time(timestamp: str) -> datetime.datetime:
@@ -76,7 +77,7 @@ def pods_force_uptime(api, namespace: str):
         if pod.obj.get("status", {}).get("phase") in ("Succeeded", "Failed"):
             continue
         if pod.annotations.get(FORCE_UPTIME_ANNOTATION, "").lower() == "true":
-            logger.info("Forced uptime because of %s/%s", pod.namespace, pod.name)
+            logger.info(f"Forced uptime because of {pod.namespace}/{pod.name}")
             return True
     return False
 
@@ -123,36 +124,20 @@ def get_replicas(
     if resource.kind == "CronJob":
         suspended = resource.obj["spec"]["suspend"]
         replicas = 0 if suspended else 1
+        state = "suspended" if suspended else "not suspended"
+        original_state = "suspended" if original_replicas == 0 else "not suspended"
         logger.debug(
-            "%s %s/%s is %s (original: %s, uptime: %s)",
-            resource.kind,
-            resource.namespace,
-            resource.name,
-            "suspended" if suspended else "not suspended",
-            "suspended" if original_replicas == 0 else "not suspended",
-            uptime,
+            f"{resource.kind} {resource.namespace}/{resource.name} is {state} (original: {original_state}, uptime: {uptime})"
         )
     elif resource.kind == "HorizontalPodAutoscaler":
         replicas = resource.obj["spec"]["minReplicas"]
         logger.debug(
-            "%s %s/%s has %s minReplicas (original: %s, uptime: %s)",
-            resource.kind,
-            resource.namespace,
-            resource.name,
-            replicas,
-            original_replicas,
-            uptime,
+            f"{resource.kind} {resource.namespace}/{resource.name} has {replicas} minReplicas (original: {original_replicas}, uptime: {uptime})"
         )
     else:
         replicas = resource.replicas
         logger.debug(
-            "%s %s/%s has %s replicas (original: %s, uptime: %s)",
-            resource.kind,
-            resource.namespace,
-            resource.name,
-            replicas,
-            original_replicas,
-            uptime,
+            f"{resource.kind} {resource.namespace}/{resource.name} has {replicas} replicas (original: {original_replicas}, uptime: {uptime})"
         )
     return replicas
 
@@ -168,36 +153,17 @@ def scale_up(
         resource.obj["spec"]["suspend"] = False
         resource.obj["spec"]["startingDeadlineSeconds"] = 0
         logger.info(
-            "Unsuspending %s %s/%s (uptime: %s, downtime: %s)",
-            resource.kind,
-            resource.namespace,
-            resource.name,
-            uptime,
-            downtime,
+            f"Unsuspending {resource.kind} {resource.namespace}/{resource.name} (uptime: {uptime}, downtime: {downtime})"
         )
     elif resource.kind == "HorizontalPodAutoscaler":
         resource.obj["spec"]["minReplicas"] = original_replicas
         logger.info(
-            "Scaling up %s %s/%s from %s to %s minReplicas (uptime: %s, downtime: %s)",
-            resource.kind,
-            resource.namespace,
-            resource.name,
-            replicas,
-            original_replicas,
-            uptime,
-            downtime,
+            f"Scaling up {resource.kind} {resource.namespace}/{resource.name} from {replicas} to {original_replicas} minReplicas (uptime: {uptime}, downtime: {downtime})"
         )
     else:
         resource.replicas = original_replicas
         logger.info(
-            "Scaling up %s %s/%s from %s to %s replicas (uptime: %s, downtime: %s)",
-            resource.kind,
-            resource.namespace,
-            resource.name,
-            replicas,
-            original_replicas,
-            uptime,
-            downtime,
+            f"Scaling up {resource.kind} {resource.namespace}/{resource.name} from {replicas} to {original_replicas} replicas (uptime: {uptime}, downtime: {downtime})"
         )
     resource.annotations[ORIGINAL_REPLICAS_ANNOTATION] = None
 
@@ -209,36 +175,17 @@ def scale_down(
     if resource.kind == "CronJob":
         resource.obj["spec"]["suspend"] = True
         logger.info(
-            "Suspending %s %s/%s (uptime: %s, downtime: %s)",
-            resource.kind,
-            resource.namespace,
-            resource.name,
-            uptime,
-            downtime,
+            f"Suspending {resource.kind} {resource.namespace}/{resource.name} (uptime: {uptime}, downtime: {downtime})"
         )
     elif resource.kind == "HorizontalPodAutoscaler":
         resource.obj["spec"]["minReplicas"] = target_replicas
         logger.info(
-            "Scaling down %s %s/%s from %s to %s minReplicas (uptime: %s, downtime: %s)",
-            resource.kind,
-            resource.namespace,
-            resource.name,
-            replicas,
-            target_replicas,
-            uptime,
-            downtime,
+            f"Scaling down {resource.kind} {resource.namespace}/{resource.name} from {replicas} to {target_replicas} minReplicas (uptime: {uptime}, downtime: {downtime})"
         )
     else:
         resource.replicas = target_replicas
         logger.info(
-            "Scaling down %s %s/%s from %s to %s replicas (uptime: %s, downtime: %s)",
-            resource.kind,
-            resource.namespace,
-            resource.name,
-            replicas,
-            target_replicas,
-            uptime,
-            downtime,
+            f"Scaling down {resource.kind} {resource.namespace}/{resource.name} from {replicas} to {target_replicas} replicas (uptime: {uptime}, downtime: {downtime})"
         )
     resource.annotations[ORIGINAL_REPLICAS_ANNOTATION] = str(replicas)
 
@@ -284,10 +231,7 @@ def autoscale_resource(
 
         if exclude and not original_replicas:
             logger.debug(
-                "%s %s/%s was excluded",
-                resource.kind,
-                resource.namespace,
-                resource.name,
+                f"{resource.kind} {resource.namespace}/{resource.name} was excluded"
             )
         else:
             ignore = False
@@ -316,11 +260,7 @@ def autoscale_resource(
                 else:
                     ignore = True
                 logger.debug(
-                    "Periods checked: upscale=%s, downscale=%s, ignore=%s, is_uptime=%s",
-                    upscale_period,
-                    downscale_period,
-                    ignore,
-                    is_uptime,
+                    f"Periods checked: upscale={upscale_period}, downscale={downscale_period}, ignore={ignore}, is_uptime={is_uptime}"
                 )
             else:
                 uptime = resource.annotations.get(UPTIME_ANNOTATION, default_uptime)
@@ -354,11 +294,7 @@ def autoscale_resource(
                     resource, grace_period, now, deployment_time_annotation
                 ):
                     logger.info(
-                        "%s %s/%s within grace period (%ds), not scaling down (yet)",
-                        resource.kind,
-                        resource.namespace,
-                        resource.name,
-                        grace_period,
+                        f"{resource.kind} {resource.namespace}/{resource.name} within grace period ({grace_period}s), not scaling down (yet)"
                     )
                 else:
                     scale_down(resource, replicas, downtime_replicas, uptime, downtime)
@@ -366,20 +302,13 @@ def autoscale_resource(
             if update_needed:
                 if dry_run:
                     logger.info(
-                        "**DRY-RUN**: would update %s %s/%s",
-                        resource.kind,
-                        resource.namespace,
-                        resource.name,
+                        f"**DRY-RUN**: would update {resource.kind} {resource.namespace}/{resource.name}"
                     )
                 else:
                     resource.update()
     except Exception as e:
         logger.exception(
-            "Failed to process %s %s/%s : %s",
-            resource.kind,
-            resource.namespace,
-            resource.name,
-            str(e),
+            f"Failed to process {resource.kind} {resource.namespace}/{resource.name}: {e}"
         )
 
 
@@ -403,9 +332,7 @@ def autoscale_resources(
     for resource in kind.objects(api, namespace=(namespace or pykube.all)):
         if resource.namespace in exclude_namespaces or resource.name in exclude_names:
             logger.debug(
-                "Resource %s was excluded (either resource itself or namespace %s are excluded)",
-                resource.name,
-                namespace,
+                f"Resource {resource.name} was excluded (either resource itself or namespace {resource.namespace} are excluded)"
             )
             continue
 

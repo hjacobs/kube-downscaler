@@ -33,8 +33,7 @@ def matches_time_spec(time: datetime.datetime, spec: str):
             return True
         if not recurring_match and not absolute_match:
             raise ValueError(
-                f'Time spec value "{spec}" does not match format ("Mon-Fri 06:30-20:30 Europe/Berlin" or'
-                + '"2019-01-01T00:00:00+00:00-2019-01-02T12:34:56+00:00")'
+                f'Time spec value "{spec_}" does not match format ("Mon-Fri 06:30-20:30 Europe/Berlin" or "2019-01-01T00:00:00+00:00-2019-01-02T12:34:56+00:00")'
             )
     return False
 

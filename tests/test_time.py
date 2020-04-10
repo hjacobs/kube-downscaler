@@ -49,6 +49,19 @@ def test_time_spec():
     )
 
 
+def test_time_spec_error_message():
+    """Test that the correct error message is shown to the user."""
+    dt = datetime(2020, 4, 10, 10, 11, tzinfo=timezone.utc)
+    with pytest.raises(ValueError) as excinfo:
+        matches_time_spec(
+            dt, "Mon-Thur 09:00-20:00 Europe/London,Fri-Fri 10:00-18:00 Europe/London"
+        )
+    assert (
+        'Time spec value "Mon-Thur 09:00-20:00 Europe/London" does not match format ("Mon-Fri 06:30-20:30 Europe/Berlin" or "2019-01-01T00:00:00+00:00-2019-01-02T12:34:56+00:00")'
+        in str(excinfo.value)
+    )
+
+
 def test_week_starts_sunday():
     # Monday, November 27th 2017
     dt = datetime(2017, 11, 27, 15, 33, tzinfo=timezone.utc)

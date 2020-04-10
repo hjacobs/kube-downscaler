@@ -83,7 +83,7 @@ def run_loop(
                 deployment_time_annotation=deployment_time_annotation,
             )
         except Exception as e:
-            logger.exception("Failed to autoscale : %s", e)
+            logger.exception(f"Failed to autoscale: {e}")
         if run_once or handler.shutdown_now:
             return
         with handler.safe_exit():

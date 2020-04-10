@@ -10,7 +10,7 @@ def check_include_resources(value):
     resources = frozenset(value.split(","))
     if not resources <= VALID_RESOURCES:
         raise argparse.ArgumentTypeError(
-            f"--include-resources argument should contain a subset of [{', '.join(VALID_RESOURCES)}]"
+            f"--include-resources argument should contain a subset of [{', '.join(sorted(VALID_RESOURCES))}]"
         )
     return value
 
@@ -38,8 +38,7 @@ def get_parser():
         "--include-resources",
         type=check_include_resources,
         default="deployments",
-        help="Downscale resources of this kind as comma separated list. [%s] (default: deployments)"
-        % (",".join(VALID_RESOURCES)),
+        help=f"Downscale resources of this kind as comma separated list. [{', '.join(sorted(VALID_RESOURCES))}] (default: deployments)",
     )
     parser.add_argument(
         "--grace-period",

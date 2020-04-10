@@ -1,3 +1,4 @@
+import collections
 import datetime
 import logging
 from typing import FrozenSet
@@ -7,6 +8,7 @@ import pykube
 from pykube import CronJob
 from pykube import Deployment
 from pykube import HorizontalPodAutoscaler
+from pykube import Namespace
 from pykube import StatefulSet
 from pykube.objects import NamespacedAPIObject
 
@@ -329,15 +331,27 @@ def autoscale_resources(
     downtime_replicas: int,
     deployment_time_annotation: Optional[str] = None,
 ):
+    resources_by_namespace = collections.defaultdict(list)
     for resource in kind.objects(api, namespace=(namespace or pykube.all)):
-        if resource.namespace in exclude_namespaces or resource.name in exclude_names:
+        if resource.name in exclude_names:
             logger.debug(
-                f"Resource {resource.name} was excluded (either resource itself or namespace {resource.namespace} are excluded)"
+                f"{resource.kind} {resource.namespace}/{resource.name} was excluded (name matches exclusion list)"
+            )
+            continue
+        resources_by_namespace[resource.namespace].append(resource)
+
+    for current_namespace, resources in sorted(resources_by_namespace.items()):
+
+        if current_namespace in exclude_namespaces:
+            logger.debug(
+                f"Namespace {current_namespace} was excluded (exclusion list matches)"
             )
             continue
 
+        logger.debug(f"Processing namespace {current_namespace}..")
+
         # Override defaults with (optional) annotations from Namespace
-        namespace_obj = pykube.Namespace.objects(api).get_by_name(resource.namespace)
+        namespace_obj = Namespace.objects(api).get_by_name(current_namespace)
 
         excluded = ignore_resource(namespace_obj, now)
 
@@ -362,21 +376,21 @@ def autoscale_resources(
         forced_uptime_for_namespace = namespace_obj.annotations.get(
             FORCE_UPTIME_ANNOTATION, forced_uptime
         )
-
-        autoscale_resource(
-            resource,
-            upscale_period_for_namespace,
-            downscale_period_for_namespace,
-            default_uptime_for_namespace,
-            default_downtime_for_namespace,
-            forced_uptime_for_namespace,
-            dry_run,
-            now,
-            grace_period,
-            default_downtime_replicas_for_namespace,
-            namespace_excluded=excluded,
-            deployment_time_annotation=deployment_time_annotation,
-        )
+        for resource in resources:
+            autoscale_resource(
+                resource,
+                upscale_period_for_namespace,
+                downscale_period_for_namespace,
+                default_uptime_for_namespace,
+                default_downtime_for_namespace,
+                forced_uptime_for_namespace,
+                dry_run,
+                now,
+                grace_period,
+                default_downtime_replicas_for_namespace,
+                namespace_excluded=excluded,
+                deployment_time_annotation=deployment_time_annotation,
+            )
 
 
 def scale(

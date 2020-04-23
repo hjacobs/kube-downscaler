@@ -87,6 +87,15 @@ Note that in cases where a HorizontalPodAutoscaler (HPA) is used along with Depl
 * If downscale to 0 replicas is desired, the annotation should be applied on the Deployment. This is a special case, since ``minReplicas`` of 0 on HPA is not allowed. Setting Deployment replicas to 0 essentially disables the HPA. In such a case, the HPA will emit events like "failed to get memory utilization: unable to get metrics for resource memory: no metrics returned from resource metrics API" as there is no Pod to retrieve metrics from.
 * If downscale greater than 0 is desired, the annotation should be applied on the HPA. This allows for dynamic scaling of the Pods even during downtime based upon the external traffic as well as maintain a lower ``minReplicas`` during downtime if there is no/low traffic. If the Deployment is annotated instead of the HPA, it leads to a race condition where kube-downscaler scales down the Deployment and HPA upscales it as its ``minReplicas`` is higher.
 
+To enable Downscaler on HPA with `--downtime-replicas=1`, ensure to add the following annotations to Deployment and HPA.
+
+.. code-block:: bash
+
+    $ kubectl annotate deploy nginx 'downscaler/exclude=true'
+    $ kubectl annotate hpa nginx 'downscaler/downtime-replicas=1'
+    $ kubectl annotate hpa nginx 'downscaler/uptime=Mon-Fri 09:00-17:00 America/Buenos_Aires'
+
+
 Configuration
 =============
 

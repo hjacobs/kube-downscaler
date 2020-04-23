@@ -29,6 +29,16 @@ rules:
   - update
   - patch
 - apiGroups:
+  - autoscaling
+  resources:
+  - horizontalpodautoscalers
+  verbs:
+  - get
+  - watch
+  - list
+  - update
+  - patch
+- apiGroups:
   - batch
   resources:
   - cronjobs

@@ -11,7 +11,7 @@ repos:
     rev: 0.2.0
     hooks:
       - id: kube-manifest-lint
-        exclude: ^helm-chart/templates/.*$
+        exclude: ^helm-chart/templates/.*$|kustomization.yaml
 
   # formatters
   - repo: https://github.com/asottile/reorder_python_imports

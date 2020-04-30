@@ -987,6 +987,56 @@ def test_scaler_name_excluded(monkeypatch):
     assert json.loads(api.patch.call_args[1]["data"]) == patch_data
 
 
+def test_scaler_namespace_force_uptime_true(monkeypatch):
+    api = MagicMock()
+    monkeypatch.setattr(
+        "kube_downscaler.scaler.helper.get_kube_api", MagicMock(return_value=api)
+    )
+
+    def get(url, version, **kwargs):
+        if url == "pods":
+            data = {"items": []}
+        elif url == "deployments":
+            data = {
+                "items": [
+                    {
+                        "metadata": {
+                            "name": "deploy-1",
+                            "namespace": "ns-1",
+                            "creationTimestamp": "2019-03-01T16:38:00Z",
+                        },
+                        "spec": {"replicas": 1},
+                    },
+                ]
+            }
+        elif url == "namespaces/ns-1":
+            data = {"metadata": {"annotations": {"downscaler/force-uptime": "true"}}}
+        else:
+            raise Exception(f"unexpected call: {url}, {version}, {kwargs}")
+
+        response = MagicMock()
+        response.json.return_value = data
+        return response
+
+    api.get = get
+
+    include_resources = frozenset(["deployments"])
+    scale(
+        namespace=None,
+        upscale_period="never",
+        downscale_period="never",
+        default_uptime="never",
+        default_downtime="always",
+        include_resources=include_resources,
+        exclude_namespaces=[],
+        exclude_deployments=[],
+        dry_run=False,
+        grace_period=300,
+    )
+
+    assert api.patch.call_count == 0
+
+
 def test_scaler_namespace_force_uptime_false(monkeypatch):
     api = MagicMock()
     monkeypatch.setattr(
@@ -1040,7 +1090,7 @@ def test_scaler_namespace_force_uptime_false(monkeypatch):
     patch_data = {
         "metadata": {
             "name": "deploy-1",
-            "namespace": "default",
+            "namespace": "ns-1",
             "creationTimestamp": "2019-03-01T16:38:00Z",
             "annotations": {ORIGINAL_REPLICAS_ANNOTATION: "1"},
         },

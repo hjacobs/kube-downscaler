@@ -68,8 +68,8 @@ def get_parser():
     )
     parser.add_argument(
         "--exclude-namespaces",
-        help="Exclude namespaces from downscaling (default: kube-system)",
-        default=os.getenv("EXCLUDE_NAMESPACES", "kube-system"),
+        help="Exclude namespaces from downscaling (default: ^kube-system$)",
+        default=os.getenv("EXCLUDE_NAMESPACES", "^kube-system$"),
     )
     parser.add_argument(
         "--exclude-deployments",

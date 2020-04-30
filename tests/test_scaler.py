@@ -688,7 +688,7 @@ def test_scaler_cronjob_unsuspend(monkeypatch):
             "creationTimestamp": "2019-03-01T16:38:00Z",
             "annotations": {ORIGINAL_REPLICAS_ANNOTATION: None},
         },
-        "spec": {"suspend": False, "startingDeadlineSeconds": 0},
+        "spec": {"suspend": False},
     }
     assert json.loads(api.patch.call_args[1]["data"]) == patch_data
 

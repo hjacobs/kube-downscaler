@@ -153,7 +153,6 @@ def scale_up(
 ):
     if resource.kind == "CronJob":
         resource.obj["spec"]["suspend"] = False
-        resource.obj["spec"]["startingDeadlineSeconds"] = 0
         logger.info(
             f"Unsuspending {resource.kind} {resource.namespace}/{resource.name} (uptime: {uptime}, downtime: {downtime})"
         )

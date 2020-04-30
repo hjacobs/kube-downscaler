@@ -1,6 +1,8 @@
 import collections
 import datetime
 import logging
+import re
+
 from typing import FrozenSet
 from typing import Optional
 
@@ -341,9 +343,9 @@ def autoscale_resources(
 
     for current_namespace, resources in sorted(resources_by_namespace.items()):
 
-        if current_namespace in exclude_namespaces:
+        if any([re.match(i, current_namespace) for i in exclude_namespaces]):
             logger.debug(
-                f"Namespace {current_namespace} was excluded (exclusion list matches)"
+                f"Namespace {current_namespace} was excluded (exclusion list regex matches)"
             )
             continue
 

@@ -1,10 +1,9 @@
 import collections
 import datetime
 import logging
-import re
-
 from typing import FrozenSet
 from typing import Optional
+from typing import Pattern
 
 import pykube
 from pykube import CronJob
@@ -319,7 +318,7 @@ def autoscale_resources(
     api,
     kind,
     namespace: str,
-    exclude_namespaces: FrozenSet[str],
+    exclude_namespaces: FrozenSet[Pattern],
     exclude_names: FrozenSet[str],
     upscale_period: str,
     downscale_period: str,
@@ -343,7 +342,9 @@ def autoscale_resources(
 
     for current_namespace, resources in sorted(resources_by_namespace.items()):
 
-        if any([re.match(i, current_namespace) for i in exclude_namespaces]):
+        if any(
+            [pattern.fullmatch(current_namespace) for pattern in exclude_namespaces]
+        ):
             logger.debug(
                 f"Namespace {current_namespace} was excluded (exclusion list regex matches)"
             )
@@ -414,7 +415,7 @@ def scale(
     default_uptime: str,
     default_downtime: str,
     include_resources: FrozenSet[str],
-    exclude_namespaces: FrozenSet[str],
+    exclude_namespaces: FrozenSet[Pattern],
     exclude_deployments: FrozenSet[str],
     dry_run: bool,
     grace_period: int,

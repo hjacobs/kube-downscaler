@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import logging
+import re
 import time
 
 from kube_downscaler import __version__
@@ -69,7 +70,9 @@ def run_loop(
                 default_uptime,
                 default_downtime,
                 include_resources=frozenset(include_resources.split(",")),
-                exclude_namespaces=frozenset(exclude_namespaces.split(",")),
+                exclude_namespaces=frozenset(
+                    re.compile(pattern) for pattern in exclude_namespaces.split(",")
+                ),
                 exclude_deployments=frozenset(exclude_deployments.split(",")),
                 dry_run=dry_run,
                 grace_period=grace_period,

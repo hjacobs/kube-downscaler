@@ -1098,3 +1098,113 @@ def test_scaler_namespace_force_uptime_false(monkeypatch):
     }
     assert api.patch.call_args[1]["url"] == "/deployments/deploy-1"
     assert json.loads(api.patch.call_args[1]["data"]) == patch_data
+
+
+def test_scaler_namespace_force_uptime_period(monkeypatch):
+    api = MagicMock()
+    monkeypatch.setattr(
+        "kube_downscaler.scaler.helper.get_kube_api", MagicMock(return_value=api)
+    )
+    ORIGINAL_REPLICAS = 2
+
+    def get(url, version, **kwargs):
+        if url == "pods":
+            data = {"items": []}
+        elif url == "deployments":
+            data = {
+                "items": [
+                    {
+                        "metadata": {
+                            "name": "deploy-1",
+                            "namespace": "ns-1",
+                            "creationTimestamp": "2019-03-01T16:38:00Z",
+                            "annotations": {
+                                ORIGINAL_REPLICAS_ANNOTATION: ORIGINAL_REPLICAS,
+                            },
+                        },
+                        "spec": {"replicas": 0},
+                    },
+                    {
+                        "metadata": {
+                            "name": "deploy-2",
+                            "namespace": "ns-2",
+                            "creationTimestamp": "2019-03-01T16:38:00Z",
+                            "annotations": {
+                                ORIGINAL_REPLICAS_ANNOTATION: ORIGINAL_REPLICAS,
+                            },
+                        },
+                        "spec": {"replicas": 0},
+                    },
+                    {
+                        "metadata": {
+                            "name": "deploy-3",
+                            "namespace": "ns-3",
+                            "creationTimestamp": "2019-03-01T16:38:00Z",
+                            "annotations": {
+                                ORIGINAL_REPLICAS_ANNOTATION: ORIGINAL_REPLICAS,
+                            },
+                        },
+                        "spec": {"replicas": 0},
+                    },
+                ]
+            }
+        elif url == "namespaces/ns-1":
+            # past period
+            data = {
+                "metadata": {
+                    "annotations": {
+                        "downscaler/force-uptime": "2020-04-04T16:00:00+00:00-2020-04-05T16:00:00+00:00"
+                    }
+                }
+            }
+        elif url == "namespaces/ns-2":
+            # current period
+            data = {
+                "metadata": {
+                    "annotations": {
+                        "downscaler/force-uptime": "2020-04-04T16:00:00+00:00-2040-04-05T16:00:00+00:00"
+                    }
+                }
+            }
+        elif url == "namespaces/ns-3":
+            # future period
+            data = {
+                "metadata": {
+                    "annotations": {
+                        "downscaler/force-uptime": "2040-04-04T16:00:00+00:00-2040-04-05T16:00:00+00:00"
+                    }
+                }
+            }
+        else:
+            raise Exception(f"unexpected call: {url}, {version}, {kwargs}")
+
+        response = MagicMock()
+        response.json.return_value = data
+        return response
+
+    api.get = get
+
+    include_resources = frozenset(["deployments"])
+    scale(
+        namespace=None,
+        upscale_period="never",
+        downscale_period="never",
+        default_uptime="never",
+        default_downtime="always",
+        include_resources=include_resources,
+        exclude_namespaces=[],
+        exclude_deployments=[],
+        dry_run=False,
+        grace_period=300,
+    )
+
+    # make sure that deploy-2 was updated
+    assert api.patch.call_count == 1
+    assert api.patch.call_args[1]["url"] == "/deployments/deploy-2"
+    assert (
+        json.loads(api.patch.call_args[1]["data"])["spec"]["replicas"]
+        == ORIGINAL_REPLICAS
+    )
+    assert not json.loads(api.patch.call_args[1]["data"])["metadata"]["annotations"][
+        ORIGINAL_REPLICAS_ANNOTATION
+    ]

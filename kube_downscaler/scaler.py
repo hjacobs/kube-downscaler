@@ -374,12 +374,20 @@ def autoscale_resources(
         downscale_period_for_namespace = namespace_obj.annotations.get(
             DOWNSCALE_PERIOD_ANNOTATION, downscale_period
         )
-        forced_uptime_for_namespace = (
-            str(
-                namespace_obj.annotations.get(FORCE_UPTIME_ANNOTATION, forced_uptime)
-            ).lower()
-            == "true"
+        forced_uptime_value_for_namespace = str(
+            namespace_obj.annotations.get(FORCE_UPTIME_ANNOTATION, forced_uptime)
         )
+        if forced_uptime_value_for_namespace.lower() == "true":
+            forced_uptime_for_namespace = True
+        elif forced_uptime_value_for_namespace.lower() == "false":
+            forced_uptime_for_namespace = False
+        elif forced_uptime_value_for_namespace:
+            forced_uptime_for_namespace = matches_time_spec(
+                now, forced_uptime_value_for_namespace
+            )
+        else:
+            forced_uptime_for_namespace = False
+
         for resource in resources:
             autoscale_resource(
                 resource,

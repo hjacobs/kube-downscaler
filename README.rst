@@ -194,7 +194,7 @@ The following annotations are supported on the Namespace level:
 * ``downscaler/downscale-period``
 * ``downscaler/uptime``: set "uptime" for all resources in this namespace
 * ``downscaler/downtime``: set "downtime" for all resources in this namespace
-* ``downscaler/force-uptime``: force scaling up all resources in this namespace
+* ``downscaler/force-uptime``: force scaling up all resources in this namespace - can be ``true``/``false`` or a period
 * ``downscaler/exclude``: set to ``true`` to exclude all resources in the namespace
 * ``downscaler/exclude-until``: temporarily exclude all resources in the namespace until the given timestamp
 * ``downscaler/downtime-replicas``: overwrite the default target replicas to scale down to (default: zero)

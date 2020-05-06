@@ -1,5 +1,6 @@
 import datetime
 import json
+import re
 from unittest.mock import MagicMock
 
 from kube_downscaler.scaler import DOWNTIME_REPLICAS_ANNOTATION
@@ -110,7 +111,83 @@ def test_scaler_namespace_excluded(monkeypatch):
         default_uptime="never",
         default_downtime="always",
         include_resources=include_resources,
-        exclude_namespaces=["system-ns"],
+        exclude_namespaces=[re.compile("system-ns")],
+        exclude_deployments=[],
+        dry_run=False,
+        grace_period=300,
+        downtime_replicas=0,
+    )
+
+    assert api.patch.call_count == 1
+
+    # make sure that deploy-2 was updated (namespace of sysdep-1 was excluded)
+    patch_data = {
+        "metadata": {
+            "name": "deploy-2",
+            "namespace": "default",
+            "creationTimestamp": "2019-03-01T16:38:00Z",
+            "annotations": {ORIGINAL_REPLICAS_ANNOTATION: "2"},
+        },
+        "spec": {"replicas": 0},
+    }
+    assert api.patch.call_args[1]["url"] == "/deployments/deploy-2"
+    assert json.loads(api.patch.call_args[1]["data"]) == patch_data
+
+
+def test_scaler_namespace_excluded_regex(monkeypatch):
+    api = MagicMock()
+    monkeypatch.setattr(
+        "kube_downscaler.scaler.helper.get_kube_api", MagicMock(return_value=api)
+    )
+
+    def get(url, version, **kwargs):
+        if url == "pods":
+            data = {"items": []}
+        elif url == "deployments":
+            data = {
+                "items": [
+                    {
+                        "metadata": {
+                            "name": "sysdep-1",
+                            "namespace": "system-ns",
+                            "creationTimestamp": "2019-03-01T16:38:00Z",
+                        },
+                        "spec": {"replicas": 1},
+                    },
+                    {
+                        "metadata": {
+                            "name": "deploy-2",
+                            "namespace": "default",
+                            "creationTimestamp": "2019-03-01T16:38:00Z",
+                        },
+                        "spec": {"replicas": 2},
+                    },
+                ]
+            }
+        elif url == "namespaces/default":
+            data = {"metadata": {}}
+        else:
+            raise Exception(f"unexpected call: {url}, {version}, {kwargs}")
+
+        response = MagicMock()
+        response.json.return_value = data
+        return response
+
+    api.get = get
+
+    include_resources = frozenset(["deployments"])
+    scale(
+        namespace=None,
+        upscale_period="never",
+        downscale_period="never",
+        default_uptime="never",
+        default_downtime="always",
+        include_resources=include_resources,
+        exclude_namespaces=[
+            re.compile("foo.*"),
+            re.compile("syst?em-.*"),
+            re.compile("def"),
+        ],
         exclude_deployments=[],
         dry_run=False,
         grace_period=300,

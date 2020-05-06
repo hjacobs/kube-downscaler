@@ -1,4 +1,5 @@
 import os.path
+import re
 from unittest.mock import MagicMock
 
 import pytest
@@ -59,3 +60,17 @@ def test_main_continue_on_failure(kubeconfig, monkeypatch):
     main(["--dry-run", "--interval=0"])
 
     assert len(calls) == 2
+
+
+def test_main_exclude_namespaces(kubeconfig, monkeypatch):
+    monkeypatch.setattr(os.path, "expanduser", lambda x: str(kubeconfig))
+
+    mock_scale = MagicMock()
+    monkeypatch.setattr("kube_downscaler.main.scale", mock_scale)
+
+    main(["--dry-run", "--once", "--exclude-namespaces=foo,.*-infra-.*"])
+
+    mock_scale.assert_called_once()
+    assert mock_scale.call_args.kwargs["exclude_namespaces"] == frozenset(
+        [re.compile("foo"), re.compile(".*-infra-.*")]
+    )

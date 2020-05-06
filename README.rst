@@ -160,7 +160,7 @@ Available command line options:
 ``--default-downtime``
     Default time range to scale down for (default: never), can also be configured via environment variable ``DEFAULT_DOWNTIME`` or via the annotation ``downscaler/downtime`` on each deployment
 ``--exclude-namespaces``
-    Exclude namespaces from downscaling (default: kube-system), can also be configured via environment variable ``EXCLUDE_NAMESPACES``
+    Exclude namespaces from downscaling (list of regex patterns, default: kube-system), can also be configured via environment variable ``EXCLUDE_NAMESPACES``
 ``--exclude-deployments``
     Exclude specific deployments/statefulsets/cronjobs from downscaling (default: kube-downscaler, downscaler), can also be configured via environment variable ``EXCLUDE_DEPLOYMENTS``.
     Despite its name, this option will match the name of any included resource type (Deployment, StatefulSet, CronJob, ..).

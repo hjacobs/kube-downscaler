@@ -33,7 +33,8 @@ It will scale down the deployment's replicas if all of the following conditions 
     * ``--downscale-period`` or ``--default-downtime`` CLI argument
     * ``UPSCALE_PERIOD`` or ``DEFAULT_UPTIME`` environment variable
     * ``DOWNSCALE_PERIOD`` or ``DEFAULT_DOWNTIME`` environment variable
-* the deployment's namespace is not part of the exclusion list (``kube-system`` is excluded by default)
+* the deployment's namespace is not part of the exclusion list:
+    * If you provide an exclusion list, it will be used in place of the default (which includes only kube-system).
 * the deployment's name is not part of the exclusion list
 * the deployment is not marked for exclusion (annotation ``downscaler/exclude: "true"`` or ``downscaler/exclude-until: "2024-04-05"``)
 * there are no active pods that force the whole cluster into uptime (annotation ``downscaler/force-uptime: "true"``)

@@ -147,7 +147,7 @@ Available command line options:
 ``--interval``
     Loop interval (default: 30s)
 ``--namespace``
-    Restrict the downscaler to work only in a single namespace (default: all namespaces). This is mainly useful for deployment scenarios where the deployer of kube-downscaler only has access to a given namespace (instead of cluster access).
+    Restrict the downscaler to work only in a single namespace (default: all namespaces). This is mainly useful for deployment scenarios where the deployer of kube-downscaler only has access to a given namespace (instead of cluster access). If used simultaneously with ``--exclude-namespaces``, none is applied.
 ``--include-resources``
     Downscale resources of this kind as comma separated list. [deployments, statefulsets, stacks, horizontalpodautoscalers] (default: deployments)
 ``--grace-period``
@@ -161,7 +161,7 @@ Available command line options:
 ``--default-downtime``
     Default time range to scale down for (default: never), can also be configured via environment variable ``DEFAULT_DOWNTIME`` or via the annotation ``downscaler/downtime`` on each deployment
 ``--exclude-namespaces``
-    Exclude namespaces from downscaling (list of regex patterns, default: kube-system), can also be configured via environment variable ``EXCLUDE_NAMESPACES``
+    Exclude namespaces from downscaling (list of regex patterns, default: kube-system), can also be configured via environment variable ``EXCLUDE_NAMESPACES``. If used simultaneously with ``--namespace``, none is applied.
 ``--exclude-deployments``
     Exclude specific deployments/statefulsets/cronjobs from downscaling (default: kube-downscaler, downscaler), can also be configured via environment variable ``EXCLUDE_DEPLOYMENTS``.
     Despite its name, this option will match the name of any included resource type (Deployment, StatefulSet, CronJob, ..).

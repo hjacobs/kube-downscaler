@@ -354,16 +354,6 @@ def autoscale_resource(
                     )
                 else:
                     resource.update()
-    except ValueError as e:
-        logger.exception(
-            "Failed to process %s %s/%s : %s",
-            resource.kind,
-            resource.namespace,
-            resource.name,
-            str(e),
-        )
-        if enable_events:
-            helper.add_event(resource, str(e), "ValueError", "Warning", dry_run)
     except Exception as e:
         logger.exception(
             f"Failed to process {resource.kind} {resource.namespace}/{resource.name}: {e}"

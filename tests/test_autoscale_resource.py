@@ -29,7 +29,7 @@ def resource():
     return res
 
 
-def test_swallow_exception(resource, caplog):
+def test_swallow_exception(monkeypatch, resource, caplog):
     caplog.set_level(logging.ERROR)
     resource.annotations = {}
     resource.replicas = 1
@@ -39,6 +39,37 @@ def test_swallow_exception(resource, caplog):
     resource.metadata = {"creationTimestamp": "invalid-timestamp!"}
     autoscale_resource(
         resource, "never", "never", "never", "always", False, False, now, 0, 0
+    )
+    assert resource.replicas == 1
+    resource.update.assert_not_called()
+    # check that the failure was logged
+    msg = "Failed to process MockResource mock/res-1: time data 'invalid-timestamp!' does not match any format (%Y-%m-%dT%H:%M:%SZ, %Y-%m-%dT%H:%M, %Y-%m-%d %H:%M, %Y-%m-%d)"
+    assert caplog.record_tuples == [("kube_downscaler.scaler", logging.ERROR, msg)]
+
+
+def test_swallow_exception_with_event(monkeypatch, resource, caplog):
+    monkeypatch.setattr(
+        "kube_downscaler.scaler.helper.add_event", MagicMock(return_value=None)
+    )
+    caplog.set_level(logging.ERROR)
+    resource.annotations = {}
+    resource.replicas = 1
+    now = datetime.strptime("2018-10-23T21:56:00Z", "%Y-%m-%dT%H:%M:%SZ").replace(
+        tzinfo=timezone.utc
+    )
+    resource.metadata = {"creationTimestamp": "invalid-timestamp!"}
+    autoscale_resource(
+        resource,
+        "never",
+        "never",
+        "never",
+        "always",
+        False,
+        False,
+        now,
+        0,
+        0,
+        enable_events=True,
     )
     assert resource.replicas == 1
     resource.update.assert_not_called()
@@ -105,6 +136,7 @@ def test_dry_run(resource):
         "always",
         False,
         dry_run=True,
+        enable_events=False,
         now=now,
         grace_period=0,
         downtime_replicas=0,
@@ -131,6 +163,7 @@ def test_grace_period(resource):
         "always",
         False,
         dry_run=False,
+        enable_events=False,
         now=now,
         grace_period=300,
         downtime_replicas=0,
@@ -200,6 +233,19 @@ def test_forced_uptime(resource):
     )
     assert resource.replicas == 1
     resource.update.assert_not_called()
+
+
+def test_autoscale_bad_resource():
+    now = datetime.strptime("2018-10-23T21:56:00Z", "%Y-%m-%dT%H:%M:%SZ").replace(
+        tzinfo=timezone.utc
+    )
+    try:
+        autoscale_resource(
+            None, "never", "never", "never", "always", False, False, now, 0, 0
+        )
+        raise AssertionError("Failed to error out with a bad resource")
+    except Exception:
+        pass
 
 
 def test_scale_up(resource):
@@ -609,6 +655,7 @@ def test_upscale_stack_with_autoscaling():
         default_downtime="never",
         forced_uptime=False,
         dry_run=True,
+        enable_events=False,
         now=now,
     )
     assert stack.obj["spec"]["replicas"] is None

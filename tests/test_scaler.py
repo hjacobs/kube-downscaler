@@ -57,6 +57,7 @@ def test_scaler_always_up(monkeypatch):
         dry_run=False,
         grace_period=300,
         downtime_replicas=0,
+        enable_events=False,
     )
 
     api.patch.assert_not_called()
@@ -116,6 +117,7 @@ def test_scaler_namespace_excluded(monkeypatch):
         dry_run=False,
         grace_period=300,
         downtime_replicas=0,
+        enable_events=False,
     )
 
     assert api.patch.call_count == 1
@@ -266,6 +268,7 @@ def test_scaler_namespace_excluded_via_annotation(monkeypatch):
         dry_run=False,
         grace_period=300,
         downtime_replicas=0,
+        enable_events=False,
     )
 
     assert api.patch.call_count == 1
@@ -288,6 +291,9 @@ def test_scaler_down_to(monkeypatch):
     api = MagicMock()
     monkeypatch.setattr(
         "kube_downscaler.scaler.helper.get_kube_api", MagicMock(return_value=api)
+    )
+    monkeypatch.setattr(
+        "kube_downscaler.scaler.helper.add_event", MagicMock(return_value=None)
     )
     SCALE_TO = 1
 
@@ -332,6 +338,7 @@ def test_scaler_down_to(monkeypatch):
         dry_run=False,
         grace_period=300,
         downtime_replicas=0,
+        enable_events=True,
     )
 
     assert api.patch.call_count == 1
@@ -343,6 +350,9 @@ def test_scaler_down_to_upscale(monkeypatch):
     api = MagicMock()
     monkeypatch.setattr(
         "kube_downscaler.scaler.helper.get_kube_api", MagicMock(return_value=api)
+    )
+    monkeypatch.setattr(
+        "kube_downscaler.scaler.helper.add_event", MagicMock(return_value=None)
     )
     SCALE_TO = 1
     ORIGINAL = 3
@@ -391,6 +401,7 @@ def test_scaler_down_to_upscale(monkeypatch):
         dry_run=False,
         grace_period=300,
         downtime_replicas=0,
+        enable_events=True,
     )
 
     assert api.patch.call_count == 1
@@ -451,6 +462,7 @@ def test_scaler_upscale_on_exclude(monkeypatch):
         dry_run=False,
         grace_period=300,
         downtime_replicas=0,
+        enable_events=False,
     )
 
     assert api.patch.call_count == 1
@@ -513,6 +525,7 @@ def test_scaler_upscale_on_exclude_namespace(monkeypatch):
         dry_run=False,
         grace_period=300,
         downtime_replicas=0,
+        enable_events=False,
     )
 
     assert api.patch.call_count == 1
@@ -572,6 +585,7 @@ def test_scaler_always_upscale(monkeypatch):
         dry_run=False,
         grace_period=300,
         downtime_replicas=0,
+        enable_events=False,
     )
 
     api.patch.assert_not_called()
@@ -627,6 +641,7 @@ def test_scaler_namespace_annotation_replicas(monkeypatch):
         dry_run=False,
         grace_period=300,
         downtime_replicas=0,
+        enable_events=False,
     )
 
     assert api.patch.call_count == 1
@@ -638,6 +653,9 @@ def test_scaler_cronjob_suspend(monkeypatch):
     api = MagicMock()
     monkeypatch.setattr(
         "kube_downscaler.scaler.helper.get_kube_api", MagicMock(return_value=api)
+    )
+    monkeypatch.setattr(
+        "kube_downscaler.scaler.helper.add_event", MagicMock(return_value=None)
     )
 
     def get(url, version, **kwargs):
@@ -681,6 +699,7 @@ def test_scaler_cronjob_suspend(monkeypatch):
         dry_run=False,
         grace_period=300,
         downtime_replicas=0,
+        enable_events=True,
     )
 
     assert api.patch.call_count == 1
@@ -702,6 +721,9 @@ def test_scaler_cronjob_unsuspend(monkeypatch):
     api = MagicMock()
     monkeypatch.setattr(
         "kube_downscaler.scaler.helper.get_kube_api", MagicMock(return_value=api)
+    )
+    monkeypatch.setattr(
+        "kube_downscaler.scaler.helper.add_event", MagicMock(return_value=None)
     )
 
     def get(url, version, **kwargs):
@@ -753,6 +775,7 @@ def test_scaler_cronjob_unsuspend(monkeypatch):
         dry_run=False,
         grace_period=300,
         downtime_replicas=0,
+        enable_events=True,
     )
 
     assert api.patch.call_count == 1
@@ -817,6 +840,7 @@ def test_scaler_downscale_period_no_error(monkeypatch, caplog):
         dry_run=False,
         grace_period=300,
         downtime_replicas=0,
+        enable_events=False,
     )
 
     assert api.patch.call_count == 0

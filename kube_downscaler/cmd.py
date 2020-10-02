@@ -87,6 +87,8 @@ def get_parser():
         help="Annotation that contains a resource's last deployment time, overrides creationTime. Use in combination with --grace-period.",
     )
     parser.add_argument(
-        "--enable-events", help="Enabled Events", action="store_true",
+        "--enable-events",
+        help="Emit Kubernetes events for scale up/down",
+        action="store_true",
     )
     return parser

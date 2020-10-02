@@ -154,28 +154,26 @@ def scale_up(
     dry_run: bool,
     enable_events: bool,
 ):
+    event_message = "Scaling up replicas"
     if resource.kind == "CronJob":
         resource.obj["spec"]["suspend"] = False
         logger.info(
             f"Unsuspending {resource.kind} {resource.namespace}/{resource.name} (uptime: {uptime}, downtime: {downtime})"
         )
-        if enable_events:
-            helper.add_event(
-                resource, "Unsuspending CronJob", "ScaleUp", "Normal", dry_run,
-            )
+        event_message = "Unsuspending CronJob"
     elif resource.kind == "HorizontalPodAutoscaler":
         resource.obj["spec"]["minReplicas"] = original_replicas
         logger.info(
             f"Scaling up {resource.kind} {resource.namespace}/{resource.name} from {replicas} to {original_replicas} minReplicas (uptime: {uptime}, downtime: {downtime})"
         )
-        if enable_events:
-            helper.add_event(
-                resource, "Scaling up replicas", "ScaleUp", "Normal", dry_run,
-            )
     else:
         resource.replicas = original_replicas
         logger.info(
             f"Scaling up {resource.kind} {resource.namespace}/{resource.name} from {replicas} to {original_replicas} replicas (uptime: {uptime}, downtime: {downtime})"
+        )
+    if enable_events:
+        helper.add_event(
+            resource, event_message, "ScaleUp", "Normal", dry_run,
         )
     resource.annotations[ORIGINAL_REPLICAS_ANNOTATION] = None
 
@@ -189,34 +187,27 @@ def scale_down(
     dry_run: bool,
     enable_events: bool,
 ):
-
+    event_message = "Scaling down replicas"
     if resource.kind == "CronJob":
         resource.obj["spec"]["suspend"] = True
         logger.info(
             f"Suspending {resource.kind} {resource.namespace}/{resource.name} (uptime: {uptime}, downtime: {downtime})"
         )
-        if enable_events:
-            helper.add_event(
-                resource, "Suspending CronJob", "ScaleDown", "Normal", dry_run,
-            )
+        event_message = "Suspending CronJob"
     elif resource.kind == "HorizontalPodAutoscaler":
         resource.obj["spec"]["minReplicas"] = target_replicas
         logger.info(
             f"Scaling down {resource.kind} {resource.namespace}/{resource.name} from {replicas} to {target_replicas} minReplicas (uptime: {uptime}, downtime: {downtime})"
         )
-        if enable_events:
-            helper.add_event(
-                resource, "Scaling down replicas", "ScaleDown", "Normal", dry_run,
-            )
     else:
         resource.replicas = target_replicas
         logger.info(
             f"Scaling down {resource.kind} {resource.namespace}/{resource.name} from {replicas} to {target_replicas} replicas (uptime: {uptime}, downtime: {downtime})"
         )
-        if enable_events:
-            helper.add_event(
-                resource, "Scaling down replicas", "ScaleDown", "Normal", dry_run,
-            )
+    if enable_events:
+        helper.add_event(
+            resource, event_message, "ScaleDown", "Normal", dry_run,
+        )
     resource.annotations[ORIGINAL_REPLICAS_ANNOTATION] = str(replicas)
 
 

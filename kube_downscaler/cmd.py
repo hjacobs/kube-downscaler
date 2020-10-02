@@ -86,4 +86,7 @@ def get_parser():
         "--deployment-time-annotation",
         help="Annotation that contains a resource's last deployment time, overrides creationTime. Use in combination with --grace-period.",
     )
+    parser.add_argument(
+        "--enable-events", help="Enabled Events", action="store_true",
+    )
     return parser

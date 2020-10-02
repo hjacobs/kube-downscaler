@@ -151,17 +151,27 @@ def scale_up(
     original_replicas: int,
     uptime,
     downtime,
+    dry_run: bool,
+    enable_events: bool,
 ):
     if resource.kind == "CronJob":
         resource.obj["spec"]["suspend"] = False
         logger.info(
             f"Unsuspending {resource.kind} {resource.namespace}/{resource.name} (uptime: {uptime}, downtime: {downtime})"
         )
+        if enable_events:
+            helper.add_event(
+                resource, "Unsuspending CronJob", "ScaleUp", "Normal", dry_run,
+            )
     elif resource.kind == "HorizontalPodAutoscaler":
         resource.obj["spec"]["minReplicas"] = original_replicas
         logger.info(
             f"Scaling up {resource.kind} {resource.namespace}/{resource.name} from {replicas} to {original_replicas} minReplicas (uptime: {uptime}, downtime: {downtime})"
         )
+        if enable_events:
+            helper.add_event(
+                resource, "Scaling up replicas", "ScaleUp", "Normal", dry_run,
+            )
     else:
         resource.replicas = original_replicas
         logger.info(
@@ -171,7 +181,13 @@ def scale_up(
 
 
 def scale_down(
-    resource: NamespacedAPIObject, replicas: int, target_replicas: int, uptime, downtime
+    resource: NamespacedAPIObject,
+    replicas: int,
+    target_replicas: int,
+    uptime,
+    downtime,
+    dry_run: bool,
+    enable_events: bool,
 ):
 
     if resource.kind == "CronJob":
@@ -179,16 +195,28 @@ def scale_down(
         logger.info(
             f"Suspending {resource.kind} {resource.namespace}/{resource.name} (uptime: {uptime}, downtime: {downtime})"
         )
+        if enable_events:
+            helper.add_event(
+                resource, "Suspending CronJob", "ScaleDown", "Normal", dry_run,
+            )
     elif resource.kind == "HorizontalPodAutoscaler":
         resource.obj["spec"]["minReplicas"] = target_replicas
         logger.info(
             f"Scaling down {resource.kind} {resource.namespace}/{resource.name} from {replicas} to {target_replicas} minReplicas (uptime: {uptime}, downtime: {downtime})"
         )
+        if enable_events:
+            helper.add_event(
+                resource, "Scaling down replicas", "ScaleDown", "Normal", dry_run,
+            )
     else:
         resource.replicas = target_replicas
         logger.info(
             f"Scaling down {resource.kind} {resource.namespace}/{resource.name} from {replicas} to {target_replicas} replicas (uptime: {uptime}, downtime: {downtime})"
         )
+        if enable_events:
+            helper.add_event(
+                resource, "Scaling down replicas", "ScaleDown", "Normal", dry_run,
+            )
     resource.annotations[ORIGINAL_REPLICAS_ANNOTATION] = str(replicas)
 
 
@@ -219,6 +247,7 @@ def autoscale_resource(
     downtime_replicas: int = 0,
     namespace_excluded=False,
     deployment_time_annotation: Optional[str] = None,
+    enable_events: bool = False,
 ):
     try:
         exclude = namespace_excluded or ignore_resource(resource, now)
@@ -284,7 +313,15 @@ def autoscale_resource(
                 and original_replicas > 0
             ):
 
-                scale_up(resource, replicas, original_replicas, uptime, downtime)
+                scale_up(
+                    resource,
+                    replicas,
+                    original_replicas,
+                    uptime,
+                    downtime,
+                    dry_run=dry_run,
+                    enable_events=enable_events,
+                )
                 update_needed = True
             elif (
                 not ignore
@@ -299,8 +336,17 @@ def autoscale_resource(
                         f"{resource.kind} {resource.namespace}/{resource.name} within grace period ({grace_period}s), not scaling down (yet)"
                     )
                 else:
-                    scale_down(resource, replicas, downtime_replicas, uptime, downtime)
+                    scale_down(
+                        resource,
+                        replicas,
+                        downtime_replicas,
+                        uptime,
+                        downtime,
+                        dry_run=dry_run,
+                        enable_events=enable_events,
+                    )
                     update_needed = True
+
             if update_needed:
                 if dry_run:
                     logger.info(
@@ -308,6 +354,16 @@ def autoscale_resource(
                     )
                 else:
                     resource.update()
+    except ValueError as e:
+        logger.exception(
+            "Failed to process %s %s/%s : %s",
+            resource.kind,
+            resource.namespace,
+            resource.name,
+            str(e),
+        )
+        if enable_events:
+            helper.add_event(resource, str(e), "ValueError", "Warning", dry_run)
     except Exception as e:
         logger.exception(
             f"Failed to process {resource.kind} {resource.namespace}/{resource.name}: {e}"
@@ -330,6 +386,7 @@ def autoscale_resources(
     grace_period: int,
     downtime_replicas: int,
     deployment_time_annotation: Optional[str] = None,
+    enable_events: bool = False,
 ):
     resources_by_namespace = collections.defaultdict(list)
     for resource in kind.objects(api, namespace=(namespace or pykube.all)):
@@ -405,6 +462,7 @@ def autoscale_resources(
                 default_downtime_replicas_for_namespace,
                 namespace_excluded=excluded,
                 deployment_time_annotation=deployment_time_annotation,
+                enable_events=enable_events,
             )
 
 
@@ -421,6 +479,7 @@ def scale(
     grace_period: int,
     downtime_replicas: int = 0,
     deployment_time_annotation: Optional[str] = None,
+    enable_events: bool = False,
 ):
     api = helper.get_kube_api()
 
@@ -446,4 +505,5 @@ def scale(
                 grace_period,
                 downtime_replicas,
                 deployment_time_annotation,
+                enable_events,
             )

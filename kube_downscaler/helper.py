@@ -1,9 +1,12 @@
 import datetime
+import logging
 import re
 from typing import Match
 
 import pykube
 import pytz
+
+logger = logging.getLogger(__name__)
 
 WEEKDAYS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]
 
@@ -66,3 +69,67 @@ def get_kube_api():
     config = pykube.KubeConfig.from_env()
     api = pykube.HTTPClient(config)
     return api
+
+
+def add_event(resource, message: str, reason: str, event_type: str, dry_run: bool):
+    event = (
+        pykube.objects.Event.objects(resource.api)
+        .filter(
+            namespace=resource.namespace,
+            field_selector={
+                "involvedObject.uid": resource.metadata.get("uid"),
+                "reason": reason,
+                "type": event_type,
+            },
+        )
+        .get_or_none()
+    )
+    if event and event.obj["message"] == message:
+        now = datetime.datetime.utcnow()
+        timestamp = now.strftime("%Y-%m-%dT%H:%M:%SZ")
+        event.obj["count"] = event.obj["count"] + 1
+        event.obj["lastTimestamp"] = timestamp
+        try:
+            event.update()
+            return event
+        except Exception as e:
+            logger.error(f"Could not update event {event.obj}: {e}")
+        return
+
+    return create_event(resource, message, reason, event_type, dry_run)
+
+
+def create_event(resource, message: str, reason: str, event_type: str, dry_run: bool):
+    now = datetime.datetime.utcnow()
+    timestamp = now.strftime("%Y-%m-%dT%H:%M:%SZ")
+    event = pykube.Event(
+        resource.api,
+        {
+            "metadata": {
+                "namespace": resource.namespace,
+                "generateName": "kube-downscaler-",
+            },
+            "type": event_type,
+            "count": 1,
+            "firstTimestamp": timestamp,
+            "lastTimestamp": timestamp,
+            "reason": reason,
+            "involvedObject": {
+                "apiVersion": resource.version,
+                "name": resource.name,
+                "namespace": resource.namespace,
+                "kind": resource.kind,
+                "resourceVersion": resource.metadata.get("resourceVersion"),
+                # https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#uids
+                "uid": resource.metadata.get("uid"),
+            },
+            "message": message,
+            "source": {"component": "kube-downscaler"},
+        },
+    )
+    if not dry_run:
+        try:
+            event.create()
+            return event
+        except Exception as e:
+            logger.error(f"Could not create event {event.obj}: {e}")

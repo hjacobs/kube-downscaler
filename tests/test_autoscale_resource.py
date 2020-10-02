@@ -38,7 +38,7 @@ def test_swallow_exception(monkeypatch, resource, caplog):
     )
     resource.metadata = {"creationTimestamp": "invalid-timestamp!"}
     autoscale_resource(
-        resource, "never", "never", "never", "always", False, False, False, now, 0, 0
+        resource, "never", "never", "never", "always", False, False, now, 0, 0
     )
     assert resource.replicas == 1
     resource.update.assert_not_called()
@@ -59,7 +59,17 @@ def test_swallow_exception_with_event(monkeypatch, resource, caplog):
     )
     resource.metadata = {"creationTimestamp": "invalid-timestamp!"}
     autoscale_resource(
-        resource, "never", "never", "never", "always", False, False, True, now, 0, 0
+        resource,
+        "never",
+        "never",
+        "never",
+        "always",
+        False,
+        False,
+        now,
+        0,
+        0,
+        enable_events=True,
     )
     assert resource.replicas == 1
     resource.update.assert_not_called()
@@ -76,7 +86,7 @@ def test_exclude(resource):
     )
     resource.metadata = {"creationTimestamp": "2018-10-23T21:55:00Z"}
     autoscale_resource(
-        resource, "never", "never", "never", "always", False, False, False, now, 0, 0
+        resource, "never", "never", "never", "always", False, False, now, 0, 0
     )
     assert resource.replicas == 1
     resource.update.assert_not_called()
@@ -171,7 +181,7 @@ def test_downtime_always(resource):
     )
     resource.metadata = {"creationTimestamp": "2018-10-23T21:55:00Z"}
     autoscale_resource(
-        resource, "never", "never", "never", "always", False, False, False, now, 0, 0
+        resource, "never", "never", "never", "always", False, False, now, 0, 0
     )
     assert resource.replicas == 0
     resource.update.assert_called_once()
@@ -191,7 +201,6 @@ def test_downtime_interval(resource):
         "never",
         "Mon-Fri 07:30-20:30 Europe/Berlin",
         "always",
-        False,
         False,
         False,
         now,
@@ -218,7 +227,6 @@ def test_forced_uptime(resource):
         "always",
         True,
         False,
-        False,
         now,
         0,
         0,
@@ -233,7 +241,7 @@ def test_autoscale_bad_resource():
     )
     try:
         autoscale_resource(
-            None, "never", "never", "never", "always", False, False, False, now, 0, 0
+            None, "never", "never", "never", "always", False, False, now, 0, 0
         )
         raise AssertionError("Failed to error out with a bad resource")
     except Exception:
@@ -256,7 +264,6 @@ def test_scale_up(resource):
         "never",
         "Mon-Fri 07:30-20:30 Europe/Berlin",
         "never",
-        False,
         False,
         False,
         now,
@@ -286,7 +293,6 @@ def test_scale_up_downtime_replicas_annotation(resource):
         "never",
         False,
         False,
-        False,
         now,
         0,
         1,
@@ -303,7 +309,7 @@ def test_downtime_replicas_annotation_invalid(resource):
     )
     resource.metadata = {"creationTimestamp": "2018-10-23T21:55:00Z"}
     autoscale_resource(
-        resource, "never", "never", "never", "always", False, False, False, now, 0, 0
+        resource, "never", "never", "never", "always", False, False, now, 0, 0
     )
     assert resource.replicas == 2
     resource.update.assert_not_called()
@@ -317,7 +323,7 @@ def test_downtime_replicas_annotation_valid(resource):
     )
     resource.metadata = {"creationTimestamp": "2018-10-23T21:55:00Z"}
     autoscale_resource(
-        resource, "never", "never", "never", "always", False, False, False, now, 0, 0
+        resource, "never", "never", "never", "always", False, False, now, 0, 0
     )
     assert resource.replicas == 1
     resource.update.assert_called_once()
@@ -331,7 +337,7 @@ def test_downtime_replicas_invalid(resource):
     )
     resource.metadata = {"creationTimestamp": "2018-10-23T21:55:00Z"}
     autoscale_resource(
-        resource, "never", "never", "never", "always", False, False, False, now, 0, "x"
+        resource, "never", "never", "never", "always", False, False, now, 0, "x"
     )
     assert resource.replicas == 2
     resource.update.assert_not_called()
@@ -344,7 +350,7 @@ def test_downtime_replicas_valid(resource):
     )
     resource.metadata = {"creationTimestamp": "2018-10-23T21:55:00Z"}
     autoscale_resource(
-        resource, "never", "never", "never", "always", False, False, False, now, 0, 1
+        resource, "never", "never", "never", "always", False, False, now, 0, 1
     )
     assert resource.replicas == 1
     resource.update.assert_called_once()
@@ -365,7 +371,7 @@ def test_set_annotation():
         tzinfo=timezone.utc
     )
     autoscale_resource(
-        resource, "never", "never", "never", "always", False, False, False, now, 0, 0
+        resource, "never", "never", "never", "always", False, False, now, 0, 0
     )
     api.patch.assert_called_once()
     patch_data = json.loads(api.patch.call_args[1]["data"])
@@ -388,7 +394,7 @@ def test_downscale_always(resource):
     )
     resource.metadata = {"creationTimestamp": "2018-10-23T21:55:00Z"}
     autoscale_resource(
-        resource, "never", "always", "always", "never", False, False, False, now, 0, 0
+        resource, "never", "always", "always", "never", False, False, now, 0, 0
     )
     assert resource.replicas == 0
     resource.update.assert_called_once()
@@ -408,7 +414,6 @@ def test_downscale_period(resource):
         "Mon-Fri 20:30-24:00 Europe/Berlin",
         "always",
         "never",
-        False,
         False,
         False,
         now,
@@ -435,7 +440,6 @@ def test_downscale_period_overlaps(resource):
         "never",
         False,
         False,
-        False,
         now,
         0,
         0,
@@ -459,7 +463,6 @@ def test_downscale_period_not_match(resource):
         "never",
         False,
         False,
-        False,
         now,
         0,
         0,
@@ -478,7 +481,7 @@ def test_downscale_period_resource_overrides_never(resource):
     )
     resource.metadata = {"creationTimestamp": "2018-10-23T21:55:00Z"}
     autoscale_resource(
-        resource, "never", "never", "always", "never", False, False, False, now, 0, 0
+        resource, "never", "never", "always", "never", False, False, now, 0, 0
     )
     assert resource.replicas == 0
     resource.update.assert_called_once()
@@ -501,7 +504,6 @@ def test_downscale_period_resource_overrides_namespace(resource):
         "never",
         False,
         False,
-        False,
         now,
         0,
         0,
@@ -521,7 +523,7 @@ def test_upscale_period_resource_overrides_never(resource):
     )
     resource.metadata = {"creationTimestamp": "2018-10-23T21:55:00Z"}
     autoscale_resource(
-        resource, "never", "never", "always", "never", False, False, False, now, 0, 0
+        resource, "never", "never", "always", "never", False, False, now, 0, 0
     )
     assert resource.replicas == 1
     resource.upd
@@ -543,7 +545,6 @@ def test_upscale_period_resource_overrides_namespace(resource):
         "never",
         "always",
         "never",
-        False,
         False,
         False,
         now,
@@ -571,7 +572,7 @@ def test_downscale_stack_deployment_ignored():
         tzinfo=timezone.utc
     )
     autoscale_resource(
-        resource, "never", "never", "never", "always", False, False, False, now, 0, 0
+        resource, "never", "never", "never", "always", False, False, now, 0, 0
     )
     assert resource.replicas == 1
     resource.update.assert_not_called()
@@ -586,12 +587,12 @@ def test_downscale_replicas_not_zero(resource):
     )
     resource.metadata = {"creationTimestamp": "2018-10-23T21:55:00Z"}
     autoscale_resource(
-        resource, "never", "never", "never", "always", False, False, False, now, 0, 1
+        resource, "never", "never", "never", "always", False, False, now, 0, 1
     )
     assert resource.replicas == 1
     assert resource.annotations[ORIGINAL_REPLICAS_ANNOTATION] == "3"
     autoscale_resource(
-        resource, "never", "never", "never", "always", False, False, False, now, 0, 1
+        resource, "never", "never", "never", "always", False, False, now, 0, 1
     )
     assert resource.replicas == 1
     assert resource.annotations[ORIGINAL_REPLICAS_ANNOTATION] == "3"
@@ -623,7 +624,6 @@ def test_downscale_stack_with_autoscaling():
         default_downtime="always",
         forced_uptime=False,
         dry_run=True,
-        enable_events=False,
         now=now,
     )
     assert stack.replicas == 0
